@@ -104,6 +104,8 @@ def create_expense_endpoint(current_user):
             new_values=get_expense_audit_values(expense),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Expense created successfully.",
@@ -113,6 +115,8 @@ def create_expense_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -122,6 +126,8 @@ def create_expense_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -138,7 +144,7 @@ def create_expense_endpoint(current_user):
 @expenses_bp.get(
     "/projects/<int:project_id>/expenses"
 )
-@role_required("admin", "worker")
+@role_required("admin")
 def get_project_expenses_endpoint(
     project_id,
     current_user,
@@ -227,6 +233,8 @@ def update_expense_endpoint(
             new_values=get_expense_audit_values(expense),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Expense updated successfully.",
@@ -236,6 +244,8 @@ def update_expense_endpoint(
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -245,6 +255,8 @@ def update_expense_endpoint(
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

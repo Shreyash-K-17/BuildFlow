@@ -142,6 +142,8 @@ def create_material_endpoint(current_user):
             new_values=get_material_audit_values(material),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Material created successfully.",
@@ -151,6 +153,8 @@ def create_material_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -161,6 +165,8 @@ def create_material_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -244,6 +250,7 @@ def update_material_endpoint(
             new_values=get_material_audit_values(material),
         )
 
+        db.session.commit()
 
         return jsonify({
             "success": True,
@@ -254,6 +261,8 @@ def update_material_endpoint(
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -264,6 +273,8 @@ def update_material_endpoint(
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -289,16 +300,6 @@ def create_transaction_endpoint(current_user):
             request.get_json() or {}
         )
 
-        material = db.session.get(
-            Material,
-            data["material_id"],
-        )
-
-        material = ensure_same_organization(
-            material,
-            current_user,
-        )
-
         project_id = data.get("project_id")
 
         if project_id is not None:
@@ -312,8 +313,9 @@ def create_transaction_endpoint(current_user):
                 current_user,
             )
 
-        transaction = create_inventory_transaction(
-            material=material,
+        transaction, material = create_inventory_transaction(
+            organization_id=current_user.organization_id,
+            material_id=data["material_id"],
             project_id=project_id,
             transaction_type=data["transaction_type"],
             quantity=data["quantity"],
@@ -333,6 +335,8 @@ def create_transaction_endpoint(current_user):
             ),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Inventory transaction recorded successfully.",
@@ -347,6 +351,8 @@ def create_transaction_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -357,6 +363,8 @@ def create_transaction_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

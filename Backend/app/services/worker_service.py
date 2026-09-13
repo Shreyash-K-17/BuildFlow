@@ -87,7 +87,8 @@ def create_worker(
     )
 
     db.session.add(worker)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(worker)
 
     return worker, user
 
@@ -224,6 +225,7 @@ def update_worker(
         if user is not None:
             user.is_active = is_active
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(worker)
 
     return worker, user

@@ -1,3 +1,5 @@
+from flask import abort
+
 from ..extensions import db
 from ..models import InventoryTransaction, Material
 
@@ -41,7 +43,8 @@ def create_material(
     )
 
     db.session.add(material)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(material)
 
     return material
 
@@ -87,13 +90,15 @@ def update_material(
     if unit_cost is not None:
         material.unit_cost = unit_cost
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(material)
 
     return material
 
 
 def create_inventory_transaction(
-    material,
+    organization_id,
+    material_id,
     project_id,
     transaction_type,
     quantity,
@@ -105,6 +110,25 @@ def create_inventory_transaction(
             "Quantity must be greater than zero."
         )
 
+    # --------------------------------------------------------
+    # Authoritative Material lookup with row-level lock
+    # --------------------------------------------------------
+    material = (
+        db.session.query(Material)
+        .filter(
+            Material.id == material_id,
+            Material.organization_id == organization_id,
+        )
+        .with_for_update()
+        .first()
+    )
+
+    if material is None:
+        abort(404)
+
+    # --------------------------------------------------------
+    # Stock validation and mutation under lock
+    # --------------------------------------------------------
     if transaction_type in DECREASE_TYPES:
         if material.current_stock < quantity:
             raise ValueError(
@@ -121,6 +145,9 @@ def create_inventory_transaction(
             "Invalid inventory transaction type."
         )
 
+    # --------------------------------------------------------
+    # Create inventory transaction and atomic commit
+    # --------------------------------------------------------
     transaction = InventoryTransaction(
         material_id=material.id,
         project_id=project_id,
@@ -131,6 +158,8 @@ def create_inventory_transaction(
     )
 
     db.session.add(transaction)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(transaction)
+    db.session.refresh(material)
 
-    return transaction
+    return transaction, material

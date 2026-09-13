@@ -128,6 +128,8 @@ def create_project_endpoint(current_user):
             new_values=get_project_audit_values(project),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Project created successfully.",
@@ -137,6 +139,8 @@ def create_project_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -147,6 +151,8 @@ def create_project_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -271,6 +277,8 @@ def update_project_endpoint(project_id, current_user):
             new_values=get_project_audit_values(project),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Project updated successfully.",
@@ -280,6 +288,8 @@ def update_project_endpoint(project_id, current_user):
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -290,6 +300,8 @@ def update_project_endpoint(project_id, current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

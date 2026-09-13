@@ -27,15 +27,23 @@ def create_attendance(
     )
 
     db.session.add(attendance)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(attendance)
 
     return attendance
 
 
-def get_project_attendance(project_id):
-    return Attendance.query.filter_by(
+def get_project_attendance(project_id, worker_id=None):
+    query = Attendance.query.filter_by(
         project_id=project_id
-    ).order_by(
+    )
+
+    if worker_id is not None:
+        query = query.filter(
+            Attendance.worker_id == worker_id
+        )
+
+    return query.order_by(
         Attendance.attendance_date.desc(),
         Attendance.id.desc(),
     ).all()
@@ -73,6 +81,7 @@ def update_attendance(
             "Check-out time cannot be before check-in time."
         )
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(attendance)
 
     return attendance

@@ -4,10 +4,11 @@ from app.extensions import db
 from app.models import Organization, User, Worker, Attendance
 
 
-def create_worker(app, organization_id, name="Test Worker"):
+def create_worker(app, organization_id, name="Test Worker", user_id=None):
     with app.app_context():
         worker = Worker(
             organization_id=organization_id,
+            user_id=user_id,
             name=name,
             phone="9876543210",
             email=f"{name.lower().replace(' ', '')}@test.com",
@@ -278,24 +279,6 @@ def test_worker_can_view_project_attendance(
     project,
     app,
 ):
-    worker_id = create_worker(
-        app,
-        admin_user["organization_id"],
-    )
-
-    create_response = client.post(
-        "/api/attendance",
-        headers=auth_headers,
-        json={
-            "worker_id": worker_id,
-            "project_id": project,
-            "attendance_date": "2026-09-13",
-            "status": "present",
-        },
-    )
-
-    assert create_response.status_code == 201
-
     with app.app_context():
         worker_user = User(
             organization_id=admin_user["organization_id"],
@@ -310,7 +293,27 @@ def test_worker_can_view_project_attendance(
         db.session.add(worker_user)
         db.session.commit()
 
+        worker_user_id = worker_user.id
         worker_email = worker_user.email
+
+    worker_id = create_worker(
+        app,
+        admin_user["organization_id"],
+        user_id=worker_user_id,
+    )
+
+    create_response = client.post(
+        "/api/attendance",
+        headers=auth_headers,
+        json={
+            "worker_id": worker_id,
+            "project_id": project,
+            "attendance_date": "2026-09-13",
+            "status": "present",
+        },
+    )
+
+    assert create_response.status_code == 201
 
     login = client.post(
         "/api/auth/login",
@@ -337,6 +340,7 @@ def test_worker_can_view_project_attendance(
 
     assert data["success"] is True
     assert len(data["data"]["attendance"]) == 1
+    assert data["data"]["attendance"][0]["worker_id"] == worker_id
 
 
 def test_worker_cannot_create_attendance(

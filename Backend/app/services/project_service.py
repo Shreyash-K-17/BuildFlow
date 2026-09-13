@@ -54,7 +54,8 @@ def create_project(
     )
 
     db.session.add(project)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(project)
 
     return project
 
@@ -152,6 +153,7 @@ def update_project(
             "Actual end date cannot be before start date."
         )
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(project)
 
     return project

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, abort, jsonify, request
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 
@@ -87,6 +87,8 @@ def create_worker_endpoint(current_user):
             new_values=get_worker_audit_values(worker),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Worker created successfully.",
@@ -110,6 +112,8 @@ def create_worker_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -120,6 +124,8 @@ def create_worker_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -161,6 +167,11 @@ def get_workers(current_user):
         Worker,
         current_user,
     )
+
+    if current_user.role == "worker":
+        query = query.filter(
+            Worker.user_id == current_user.id
+        )
 
     workers = query.order_by(
         Worker.id.asc()
@@ -209,6 +220,9 @@ def get_worker(worker_id, current_user):
         worker,
         current_user,
     )
+
+    if current_user.role == "worker" and worker.user_id != current_user.id:
+        abort(404)
 
     return jsonify({
         "success": True,
@@ -299,6 +313,8 @@ def update_worker_endpoint(worker_id, current_user):
             new_values=get_worker_audit_values(worker),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Worker updated successfully.",
@@ -322,6 +338,8 @@ def update_worker_endpoint(worker_id, current_user):
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

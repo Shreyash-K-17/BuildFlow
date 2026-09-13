@@ -193,6 +193,8 @@ def create_task_endpoint(phase_id, current_user):
             new_values=get_task_audit_values(task),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Task created successfully.",
@@ -202,6 +204,8 @@ def create_task_endpoint(phase_id, current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -212,6 +216,8 @@ def create_task_endpoint(phase_id, current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -418,6 +424,8 @@ def update_task_endpoint(task_id, current_user):
             new_values=get_task_audit_values(task),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Task updated successfully.",
@@ -427,6 +435,8 @@ def update_task_endpoint(task_id, current_user):
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -437,6 +447,8 @@ def update_task_endpoint(task_id, current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

@@ -37,7 +37,8 @@ def create_expense(
     )
 
     db.session.add(expense)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(expense)
 
     return expense
 
@@ -86,6 +87,7 @@ def update_expense(
     if expense_date is not None:
         expense.expense_date = expense_date
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(expense)
 
     return expense

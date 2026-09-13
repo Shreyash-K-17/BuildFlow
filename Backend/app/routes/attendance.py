@@ -151,6 +151,8 @@ def create_attendance_endpoint(current_user):
             ),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Attendance recorded successfully.",
@@ -162,6 +164,8 @@ def create_attendance_endpoint(current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -172,6 +176,8 @@ def create_attendance_endpoint(current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -212,8 +218,26 @@ def get_attendance(project_id, current_user):
         current_user,
     )
 
+    worker_id = None
+    if current_user.role == "worker":
+        worker = Worker.query.filter_by(
+            user_id=current_user.id,
+            organization_id=current_user.organization_id,
+        ).first()
+
+        if not worker:
+            return jsonify({
+                "success": True,
+                "data": {
+                    "attendance": []
+                },
+            }), 200
+
+        worker_id = worker.id
+
     records = get_project_attendance(
-        project.id
+        project_id=project.id,
+        worker_id=worker_id,
     )
 
     return jsonify({
@@ -286,6 +310,8 @@ def update_attendance_endpoint(
             ),
         )
 
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Attendance updated successfully.",
@@ -297,6 +323,8 @@ def update_attendance_endpoint(
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -307,6 +335,8 @@ def update_attendance_endpoint(
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

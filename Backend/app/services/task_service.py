@@ -88,7 +88,8 @@ def create_task(
     )
 
     db.session.add(task)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(task)
 
     return task
 
@@ -179,6 +180,7 @@ def update_task(
     else:
         task.completed_at = None
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(task)
 
     return task

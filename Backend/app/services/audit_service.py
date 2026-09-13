@@ -26,7 +26,7 @@ def create_audit_log(
     )
 
     db.session.add(audit_log)
-    db.session.commit()
+    db.session.flush()
 
     return audit_log
 

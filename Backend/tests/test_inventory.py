@@ -464,3 +464,168 @@ def test_low_stock_material(
 
     assert material_data["current_stock"] == "10.000"
     assert material_data["minimum_stock"] == "20.000"
+
+
+def test_consumption_overdraw_prevented_and_stock_preserved(
+    client,
+    auth_headers,
+    material,
+):
+    # Initial stock is 100.
+    # First consumption: 60 units -> succeeds
+    res1 = client.post(
+        "/api/inventory/transactions",
+        headers=auth_headers,
+        json={
+            "material_id": material,
+            "transaction_type": "consumption",
+            "quantity": 60,
+        },
+    )
+    assert res1.status_code == 201
+    assert res1.get_json()["data"]["current_stock"] == "40.000"
+
+    # Second consumption: 60 units -> fails (only 40 left)
+    res2 = client.post(
+        "/api/inventory/transactions",
+        headers=auth_headers,
+        json={
+            "material_id": material,
+            "transaction_type": "consumption",
+            "quantity": 60,
+        },
+    )
+    assert res2.status_code == 409
+    data2 = res2.get_json()
+    assert data2["success"] is False
+    assert data2["error"]["code"] == "INVENTORY_ERROR"
+    assert "Insufficient material stock." in data2["error"]["message"]
+
+    # Verify material stock is exactly 40.000 and never went negative
+    get_res = client.get(
+        "/api/materials",
+        headers=auth_headers,
+    )
+    assert get_res.status_code == 200
+    materials = get_res.get_json()["data"]["materials"]
+    assert materials[0]["current_stock"] == "40.000"
+
+    # Verify transactions count: only the single successful transaction exists
+    tx_res = client.get(
+        f"/api/materials/{material}/transactions",
+        headers=auth_headers,
+    )
+    assert tx_res.status_code == 200
+    transactions = tx_res.get_json()["data"]["transactions"]
+    assert len(transactions) == 1
+    assert transactions[0]["transaction_type"] == "consumption"
+    assert transactions[0]["quantity"] == "60.000"
+
+
+def test_cross_organization_transaction_returns_404(
+    client,
+    app,
+):
+    # Org 1: register and create material
+    client.post(
+        "/api/auth/register",
+        json={
+            "organization_name": "Org 1 Material",
+            "username": "org1matadmin",
+            "email": "org1mat@test.com",
+            "password": "Admin@123",
+        },
+    )
+    login1 = client.post(
+        "/api/auth/login",
+        json={"email": "org1mat@test.com", "password": "Admin@123"},
+    )
+    token1 = login1.get_json()["data"]["access_token"]
+    headers1 = {"Authorization": f"Bearer {token1}"}
+
+    mat_res = client.post(
+        "/api/materials",
+        headers=headers1,
+        json={
+            "name": "Org 1 Timber",
+            "unit": "pieces",
+            "current_stock": 50,
+            "minimum_stock": 10,
+        },
+    )
+    mat_id = mat_res.get_json()["data"]["material"]["id"]
+
+    # Org 2: register
+    client.post(
+        "/api/auth/register",
+        json={
+            "organization_name": "Org 2 Material",
+            "username": "org2matadmin",
+            "email": "org2mat@test.com",
+            "password": "Admin@123",
+        },
+    )
+    login2 = client.post(
+        "/api/auth/login",
+        json={"email": "org2mat@test.com", "password": "Admin@123"},
+    )
+    token2 = login2.get_json()["data"]["access_token"]
+    headers2 = {"Authorization": f"Bearer {token2}"}
+
+    # Org 2 attempts to transact on Org 1 material -> 404
+    tx_res = client.post(
+        "/api/inventory/transactions",
+        headers=headers2,
+        json={
+            "material_id": mat_id,
+            "transaction_type": "consumption",
+            "quantity": 10,
+        },
+    )
+    assert tx_res.status_code == 404
+
+
+def test_adjustment_transactions_update_stock_correctly(
+    client,
+    auth_headers,
+    material,
+):
+    # Initial stock is 100
+    # adjustment_in +25 -> 125
+    res1 = client.post(
+        "/api/inventory/transactions",
+        headers=auth_headers,
+        json={
+            "material_id": material,
+            "transaction_type": "adjustment_in",
+            "quantity": 25,
+        },
+    )
+    assert res1.status_code == 201
+    assert res1.get_json()["data"]["current_stock"] == "125.000"
+
+    # adjustment_out -35 -> 90
+    res2 = client.post(
+        "/api/inventory/transactions",
+        headers=auth_headers,
+        json={
+            "material_id": material,
+            "transaction_type": "adjustment_out",
+            "quantity": 35,
+        },
+    )
+    assert res2.status_code == 201
+    assert res2.get_json()["data"]["current_stock"] == "90.000"
+
+    # adjustment_out -100 (exceeds 90) -> 409
+    res3 = client.post(
+        "/api/inventory/transactions",
+        headers=auth_headers,
+        json={
+            "material_id": material,
+            "transaction_type": "adjustment_out",
+            "quantity": 100,
+        },
+    )
+    assert res3.status_code == 409
+    assert "Insufficient material stock." in res3.get_json()["error"]["message"]
