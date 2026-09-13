@@ -1,0 +1,61 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Flask
+instance/
+
+# =========================
+# Next.js
+# =========================
+node_modules/
+.next/
+out/
+.vercel/
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
