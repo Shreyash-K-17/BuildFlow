@@ -272,16 +272,16 @@ export function getTaskStatusLabel(status: TaskStatus): string {
 
 export function getTaskStatusBadgeVariant(
   status: TaskStatus
-): "secondary" | "warning" | "danger" | "success" | "default" {
+): "secondary" | "warning" | "danger" | "success" | "default" | "info" {
   switch (status) {
     case "not_started":
       return "secondary";
     case "in_progress":
-      return "warning";
+      return "info";
     case "blocked":
       return "danger";
     case "on_hold":
-      return "secondary";
+      return "warning";
     case "completed":
       return "success";
     default:

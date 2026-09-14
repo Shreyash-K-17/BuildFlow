@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { ProjectFormModal } from "@/components/projects/project-form-modal";
+import { PhaseList } from "@/components/phases/phase-list";
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -379,35 +380,8 @@ export default function ProjectDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Subsequent Phases Readiness Card */}
-          <Card hoverEffect="default" className="border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
-            <CardHeader>
-              <CardTitle className="text-base">Work Breakdown & Execution Modules</CardTitle>
-              <CardDescription>
-                Phases, tasks, workforce allocations, site inventory, and operational expenses connect to this project in upcoming build phases.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 block">Phases & Tasks</span>
-                  <span className="text-[10px] text-amber-500 font-medium">Phase 5</span>
-                </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 block">Workforce & Site</span>
-                  <span className="text-[10px] text-amber-500 font-medium">Phase 6</span>
-                </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 block">Materials</span>
-                  <span className="text-[10px] text-amber-500 font-medium">Phase 7</span>
-                </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 block">Expenses</span>
-                  <span className="text-[10px] text-amber-500 font-medium">Phase 8</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Work Breakdown Structure: Phases & Tasks */}
+          <PhaseList projectId={projectId} />
         </div>
 
         {/* Right Column: Metadata & System Info */}
