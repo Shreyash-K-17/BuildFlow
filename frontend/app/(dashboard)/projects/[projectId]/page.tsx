@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Project, ProjectResponseData } from "@/types";
 import { useAuth } from "@/lib/auth";
-import { api, ApiError } from "@/lib/api";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { formatCurrency, formatCompactCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
@@ -30,7 +30,7 @@ export default function ProjectDetailsPage() {
 
   const fetchProjectDetails = useCallback(async () => {
     if (isNaN(projectId)) {
-      setError("Invalid project ID.");
+      setError("The project doesn't exist or you don't have permission to view it.");
       setIsLoading(false);
       return;
     }
@@ -42,16 +42,8 @@ export default function ProjectDetailsPage() {
         `/projects/${projectId}`
       );
       setProject(response.project);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 404) {
-          setError("Project not found or you do not have permission to view it.");
-        } else {
-          setError(err.message || "Unable to load project details.");
-        }
-      } else {
-        setError("Unable to load project details. Please check your network.");
-      }
+    } catch {
+      setError("The project doesn't exist or you don't have permission to view it.");
     } finally {
       setIsLoading(false);
     }
@@ -69,17 +61,9 @@ export default function ProjectDetailsPage() {
           setIsLoading(false);
         }
       })
-      .catch((err) => {
+      .catch(() => {
         if (isSubscribed) {
-          if (err instanceof ApiError) {
-            if (err.status === 404) {
-              setError("Project not found or you do not have permission to view it.");
-            } else {
-              setError(err.message || "Unable to load project details.");
-            }
-          } else {
-            setError("Unable to load project details. Please check your network.");
-          }
+          setError("The project doesn't exist or you don't have permission to view it.");
           setIsLoading(false);
         }
       });
@@ -95,7 +79,9 @@ export default function ProjectDetailsPage() {
     setTimeout(() => setSuccessToast(null), 4000);
   };
 
-  const displayError = isInvalidId ? "Invalid project ID." : error;
+  const displayError = isInvalidId
+    ? "The project doesn't exist or you don't have permission to view it."
+    : error;
 
   // Skeleton Loader for Project Details
   if (isLoading) {
@@ -122,50 +108,63 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  // Error State
+  // Project Not Found / Error State
   if (displayError || !project) {
     return (
-      <div className="space-y-6">
-        <Link
-          href="/projects"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-        >
-          &larr; Back to Projects
-        </Link>
-        <Card className="border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20">
-          <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex-shrink-0">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-red-900 dark:text-red-200">
-                  Unable to load project
-                </h3>
-                <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">
-                  {displayError || "Project data unavailable."}
-                </p>
-              </div>
+      <div className="space-y-6 animate-in fade-in duration-200">
+        <div>
+          <Link
+            href="/projects"
+            className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <svg
+              className="w-3.5 h-3.5 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Projects
+          </Link>
+        </div>
+
+        <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center text-center p-12">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
+              <svg
+                className="w-7 h-7"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
-            <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              Project Not Found
+            </h2>
+            <p className="mt-1.5 max-w-md text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              The project doesn&apos;t exist or you don&apos;t have permission to view it.
+            </p>
+
+            <div className="flex items-center gap-3 mt-6">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/projects")}
               >
-                All Projects
+                &larr; Back to Projects
               </Button>
               {!isInvalidId && (
                 <Button
@@ -289,19 +288,19 @@ export default function ProjectDetailsPage() {
 
       {/* KPI / METRIC HIGHLIGHTS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm buildflow-hover-card buildflow-hover-card-amber">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
             Allocated Budget
           </span>
           <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1 block">
-            {formatCurrency(project.budget)}
+            {formatCompactCurrency(project.budget)}
           </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
-            Authorized project expenditure
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block font-mono">
+            {formatCurrency(project.budget)}
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm buildflow-hover-card buildflow-hover-card-blue">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
             Start Date
           </span>
@@ -313,7 +312,7 @@ export default function ProjectDetailsPage() {
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm buildflow-hover-card">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
             Target Completion
           </span>
@@ -325,15 +324,15 @@ export default function ProjectDetailsPage() {
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm buildflow-hover-card">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
             Actual End Date
           </span>
           <span className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1 block">
-            {project.actual_end_date ? formatDate(project.actual_end_date) : "In Progress"}
+            {project.actual_end_date ? formatDate(project.actual_end_date) : "—"}
           </span>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
-            {project.actual_end_date ? "Verified completion" : "Pending final sign-off"}
+            {project.actual_end_date ? "Verified completion" : "Not completed"}
           </span>
         </div>
       </div>
@@ -342,7 +341,7 @@ export default function ProjectDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Scope & Description */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card hoverEffect="default">
             <CardHeader>
               <CardTitle>Project Scope & Specifications</CardTitle>
               <CardDescription>
@@ -381,7 +380,7 @@ export default function ProjectDetailsPage() {
           </Card>
 
           {/* Subsequent Phases Readiness Card */}
-          <Card className="border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+          <Card hoverEffect="default" className="border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
             <CardHeader>
               <CardTitle className="text-base">Work Breakdown & Execution Modules</CardTitle>
               <CardDescription>
@@ -390,19 +389,19 @@ export default function ProjectDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block">Phases & Tasks</span>
                   <span className="text-[10px] text-amber-500 font-medium">Phase 5</span>
                 </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block">Workforce & Site</span>
                   <span className="text-[10px] text-amber-500 font-medium">Phase 6</span>
                 </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block">Materials</span>
                   <span className="text-[10px] text-amber-500 font-medium">Phase 7</span>
                 </div>
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 buildflow-hover-card">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block">Expenses</span>
                   <span className="text-[10px] text-amber-500 font-medium">Phase 8</span>
                 </div>
@@ -413,7 +412,7 @@ export default function ProjectDetailsPage() {
 
         {/* Right Column: Metadata & System Info */}
         <div className="space-y-6">
-          <Card>
+          <Card hoverEffect="default">
             <CardHeader>
               <CardTitle className="text-base">System Metadata</CardTitle>
               <CardDescription>

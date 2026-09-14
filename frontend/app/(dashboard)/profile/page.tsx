@@ -41,7 +41,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile Overview Card */}
-      <Card>
+      <Card hoverEffect="default">
         <CardHeader>
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 font-bold text-xl shadow-md border-2 border-amber-400">

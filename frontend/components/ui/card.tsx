@@ -1,17 +1,38 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
+export type CardHoverVariant =
+  | boolean
+  | "none"
+  | "default"
+  | "amber"
+  | "blue"
+  | "green"
+  | "red"
+  | "interactive";
+
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  hoverEffect?: boolean;
+  hoverEffect?: CardHoverVariant;
 }
 
 export function Card({ className, hoverEffect = false, ...props }: CardProps) {
+  const getHoverClass = () => {
+    if (!hoverEffect || hoverEffect === "none") return "";
+    if (hoverEffect === true || hoverEffect === "default") return "buildflow-hover-card";
+    if (hoverEffect === "amber") return "buildflow-hover-card-amber";
+    if (hoverEffect === "blue") return "buildflow-hover-card-blue";
+    if (hoverEffect === "green") return "buildflow-hover-card-green";
+    if (hoverEffect === "red") return "buildflow-hover-card-red";
+    if (hoverEffect === "interactive")
+      return "buildflow-hover-card buildflow-hover-card-interactive";
+    return "buildflow-hover-card";
+  };
+
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-sm transition-all duration-200 overflow-hidden",
-        hoverEffect &&
-          "hover:border-amber-500/40 hover:shadow-md hover:shadow-amber-500/5",
+        "rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-sm",
+        getHoverClass(),
         className
       )}
       {...props}

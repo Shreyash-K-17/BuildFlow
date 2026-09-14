@@ -76,7 +76,7 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
   ];
 
   return (
-    <Card className="h-full flex flex-col justify-between">
+    <Card hoverEffect="default" className="h-full flex flex-col justify-between">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>

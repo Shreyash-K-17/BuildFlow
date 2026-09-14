@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHoverVariant } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +32,23 @@ export function KPICard({
     sky: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20",
   };
 
+  const getHoverVariant = (): CardHoverVariant => {
+    switch (variant) {
+      case "amber":
+        return "amber";
+      case "emerald":
+        return "green";
+      case "danger":
+        return "red";
+      case "sky":
+        return "blue";
+      default:
+        return "default";
+    }
+  };
+
   return (
-    <Card hoverEffect className={cn("overflow-hidden", className)}>
+    <Card hoverEffect={getHoverVariant()} className={cn(className)}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">

@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Project } from "@/types";
 import { ProjectStatusBadge } from "./project-status-badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCompactCurrency, formatDate } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: Project;
@@ -12,7 +12,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="block p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 hover:border-amber-500/50 dark:hover:border-amber-500/50 hover:shadow-md transition-all duration-150 group"
+      className="block p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 buildflow-hover-card-amber buildflow-hover-card-interactive group"
     >
       <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="min-w-0 flex-1">
@@ -40,7 +40,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             Budget
           </span>
           <span className="font-semibold text-slate-900 dark:text-slate-100">
-            {formatCurrency(project.budget)}
+            {formatCompactCurrency(project.budget)}
           </span>
         </div>
 

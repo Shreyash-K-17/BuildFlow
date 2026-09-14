@@ -6,7 +6,14 @@ import { Modal } from "@/components/ui/modal";
 import { Input, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import {
+  BudgetUnit,
+  convertBudgetToRupees,
+  getSensibleBudgetUnit,
+  BUDGET_UNIT_MULTIPLIERS,
+  formatCurrency,
+  formatCompactCurrency,
+} from "@/lib/utils";
 
 interface ProjectFormModalProps {
   isOpen: boolean;
@@ -20,7 +27,8 @@ interface FormState {
   client_name: string;
   location: string;
   status: ProjectStatus;
-  budget: string;
+  budgetAmount: string;
+  budgetUnit: BudgetUnit;
   start_date: string;
   expected_end_date: string;
   actual_end_date: string;
@@ -39,21 +47,35 @@ function ProjectFormContent({
   onSuccess,
 }: ProjectFormContentProps) {
   const isEdit = !!initialData;
-  const [formData, setFormData] = useState<FormState>(() => ({
-    name: initialData?.name || "",
-    client_name: initialData?.client_name || "",
-    location: initialData?.location || "",
-    status: initialData?.status || "planning",
-    budget: initialData?.budget ? String(initialData.budget) : "0",
-    start_date: initialData?.start_date || "",
-    expected_end_date: initialData?.expected_end_date || "",
-    actual_end_date: initialData?.actual_end_date || "",
-    description: initialData?.description || "",
-  }));
+
+  const [formData, setFormData] = useState<FormState>(() => {
+    const rawBudget = initialData?.budget ? parseFloat(initialData.budget) : 0;
+    const sensible = getSensibleBudgetUnit(rawBudget);
+
+    return {
+      name: initialData?.name || "",
+      client_name: initialData?.client_name || "",
+      location: initialData?.location || "",
+      status: initialData?.status || "planning",
+      budgetAmount:
+        isNaN(rawBudget) || rawBudget <= 0 ? "0" : sensible.amount,
+      budgetUnit:
+        isNaN(rawBudget) || rawBudget <= 0 ? "lakh" : sensible.unit,
+      start_date: initialData?.start_date || "",
+      expected_end_date: initialData?.expected_end_date || "",
+      actual_end_date: initialData?.actual_end_date || "",
+      description: initialData?.description || "",
+    };
+  });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const calculatedRupees = convertBudgetToRupees(
+    formData.budgetAmount,
+    formData.budgetUnit
+  );
 
   const handleChange = (
     field: keyof FormState,
@@ -66,6 +88,28 @@ function ProjectFormContent({
         delete updated[field];
         return updated;
       });
+    }
+  };
+
+  const handleUnitChange = (newUnit: BudgetUnit) => {
+    const currentRupees = convertBudgetToRupees(
+      formData.budgetAmount,
+      formData.budgetUnit
+    );
+
+    if (currentRupees > 0) {
+      const newMultiplier = BUDGET_UNIT_MULTIPLIERS[newUnit] || 1;
+      const newAmount = currentRupees / newMultiplier;
+      setFormData((prev) => ({
+        ...prev,
+        budgetUnit: newUnit,
+        budgetAmount: String(Number(newAmount.toFixed(4))),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        budgetUnit: newUnit,
+      }));
     }
   };
 
@@ -89,9 +133,9 @@ function ProjectFormContent({
       newErrors.location = "Location cannot exceed 255 characters.";
     }
 
-    const numericBudget = parseFloat(formData.budget);
-    if (isNaN(numericBudget) || numericBudget < 0) {
-      newErrors.budget = "Budget must be a valid non-negative number.";
+    const numericAmount = parseFloat(formData.budgetAmount);
+    if (isNaN(numericAmount) || numericAmount < 0 || !isFinite(numericAmount)) {
+      newErrors.budget = "Budget amount must be a valid non-negative number.";
     }
 
     if (
@@ -125,12 +169,17 @@ function ProjectFormContent({
     setIsSubmitting(true);
 
     try {
+      const finalBudget = convertBudgetToRupees(
+        formData.budgetAmount,
+        formData.budgetUnit
+      );
+
       const payload: CreateProjectPayload | UpdateProjectPayload = {
         name: formData.name.trim(),
         client_name: formData.client_name.trim() || null,
         location: formData.location.trim() || null,
         status: formData.status,
-        budget: formData.budget || "0",
+        budget: finalBudget,
         start_date: formData.start_date || null,
         expected_end_date: formData.expected_end_date || null,
         actual_end_date: formData.actual_end_date || null,
@@ -275,17 +324,58 @@ function ProjectFormContent({
           </div>
 
           <div>
-            <Input
-              label="Total Allocated Budget (INR)"
-              type="number"
-              min="0"
-              step="any"
-              placeholder="0"
-              value={formData.budget}
-              onChange={(e) => handleChange("budget", e.target.value)}
-              error={errors.budget}
-              helperText={`Preview: ${formatCurrency(formData.budget)}`}
-            />
+            <label
+              htmlFor="project-budget-input"
+              className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5"
+            >
+              Allocated Budget (INR) <span className="text-amber-500 ml-1">*</span>
+            </label>
+            <div className="flex rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-all">
+              <div className="flex items-center pl-3 pr-1 text-slate-400 font-semibold text-sm select-none">
+                ₹
+              </div>
+              <input
+                id="project-budget-input"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                value={formData.budgetAmount}
+                onChange={(e) => handleChange("budgetAmount", e.target.value)}
+                className="w-full bg-transparent px-2 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
+              />
+              <select
+                id="project-budget-unit-select"
+                value={formData.budgetUnit}
+                onChange={(e) => handleUnitChange(e.target.value as BudgetUnit)}
+                aria-label="Budget denomination unit"
+                className="border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+              >
+                <option value="crore">Crore (Cr)</option>
+                <option value="lakh">Lakh</option>
+                <option value="thousand">Thousand</option>
+                <option value="rupees">Rupees (₹)</option>
+              </select>
+            </div>
+            {errors.budget ? (
+              <p className="text-xs font-medium text-red-500 mt-1.5">
+                {errors.budget}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex items-center justify-between">
+                <span>
+                  Preview:{" "}
+                  <strong className="text-amber-600 dark:text-amber-400 font-semibold">
+                    {formatCurrency(calculatedRupees)}
+                  </strong>
+                </span>
+                {calculatedRupees > 0 && (
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    ({formatCompactCurrency(calculatedRupees)})
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Project, ProjectsResponseData } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatCompactCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
@@ -199,7 +199,7 @@ export default function ProjectsPage() {
         <>
           {/* METRIC COUNTER CARDS */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm buildflow-hover-card">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
                 Total Projects
               </span>
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/10 shadow-sm">
+            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/10 shadow-sm buildflow-hover-card-green">
               <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 block">
                 Active Sites
               </span>
@@ -217,7 +217,7 @@ export default function ProjectsPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-50/30 dark:bg-amber-950/10 shadow-sm">
+            <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-50/30 dark:bg-amber-950/10 shadow-sm buildflow-hover-card-amber">
               <span className="text-xs font-medium text-amber-700 dark:text-amber-400 block">
                 In Planning
               </span>
@@ -226,7 +226,7 @@ export default function ProjectsPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-50/30 dark:bg-blue-950/10 shadow-sm">
+            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-50/30 dark:bg-blue-950/10 shadow-sm buildflow-hover-card-blue">
               <span className="text-xs font-medium text-blue-700 dark:text-blue-400 block">
                 Completed
               </span>
@@ -235,12 +235,12 @@ export default function ProjectsPage() {
               </span>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm col-span-2 sm:col-span-1">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm col-span-2 sm:col-span-1 buildflow-hover-card">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
                 Portfolio Budget
               </span>
               <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1 block truncate">
-                {formatCurrency(metrics.totalBudget)}
+                {formatCompactCurrency(metrics.totalBudget)}
               </span>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function ProjectsPage() {
                         {filteredProjects.map((project) => (
                           <tr
                             key={project.id}
-                            className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                            className="buildflow-hover-row transition-colors group cursor-pointer"
                           >
                             <td className="py-3.5 px-4">
                               <Link
@@ -400,8 +400,13 @@ export default function ProjectsPage() {
                             <td className="py-3.5 px-4">
                               <ProjectStatusBadge status={project.status} size="sm" />
                             </td>
-                            <td className="py-3.5 px-4 text-right font-semibold text-slate-900 dark:text-slate-100">
-                              {formatCurrency(project.budget)}
+                            <td className="py-3.5 px-4 text-right">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 block text-xs">
+                                {formatCompactCurrency(project.budget)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                {formatCurrency(project.budget)}
+                              </span>
                             </td>
                             <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                               <div className="flex flex-col text-[11px]">

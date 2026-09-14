@@ -97,3 +97,119 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.7);
 }
+
+/* ============================================================
+   BUILDFLOW INTERACTIVE HOVER LIFT & AMBIENT SHADOW SYSTEM
+   ============================================================ */
+
+.buildflow-hover-card {
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.buildflow-hover-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 18px -3px rgba(0, 0, 0, 0.45),
+    0 16px 36px -6px rgba(0, 0, 0, 0.35),
+    0 24px 52px -8px rgba(51, 65, 85, 0.45);
+}
+
+/* Amber Accent Ambient Shadow */
+.buildflow-hover-card-amber {
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.buildflow-hover-card-amber:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 18px -3px rgba(0, 0, 0, 0.45),
+    0 16px 36px -6px rgba(0, 0, 0, 0.35),
+    0 24px 54px -6px rgba(245, 158, 11, 0.22);
+}
+
+/* Blue / Sky Accent Ambient Shadow */
+.buildflow-hover-card-blue {
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.buildflow-hover-card-blue:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 18px -3px rgba(0, 0, 0, 0.45),
+    0 16px 36px -6px rgba(0, 0, 0, 0.35),
+    0 24px 54px -6px rgba(56, 189, 248, 0.22);
+}
+
+/* Green / Emerald Accent Ambient Shadow */
+.buildflow-hover-card-green {
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.buildflow-hover-card-green:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 18px -3px rgba(0, 0, 0, 0.45),
+    0 16px 36px -6px rgba(0, 0, 0, 0.35),
+    0 24px 54px -6px rgba(16, 185, 129, 0.22);
+}
+
+/* Red / Danger Accent Ambient Shadow */
+.buildflow-hover-card-red {
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.buildflow-hover-card-red:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 18px -3px rgba(0, 0, 0, 0.45),
+    0 16px 36px -6px rgba(0, 0, 0, 0.35),
+    0 24px 54px -6px rgba(239, 68, 68, 0.22);
+}
+
+/* Clickable / Interactive Indicator */
+.buildflow-hover-card-interactive {
+  cursor: pointer;
+}
+
+.buildflow-hover-card-interactive:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Table Rows: Subtle background depth on hover */
+.buildflow-hover-row {
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.buildflow-hover-row:hover {
+  background-color: rgba(30, 41, 59, 0.55) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buildflow-hover-card,
+  .buildflow-hover-card-amber,
+  .buildflow-hover-card-blue,
+  .buildflow-hover-card-green,
+  .buildflow-hover-card-red,
+  .buildflow-hover-card-interactive,
+  .buildflow-hover-row {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+

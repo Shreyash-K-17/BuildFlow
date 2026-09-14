@@ -18,7 +18,7 @@ export function LowStockMaterialsCard({ materials }: LowStockMaterialsCardProps)
   const hasLowStock = low_stock_count > 0;
 
   return (
-    <Card className="h-full flex flex-col justify-between">
+    <Card hoverEffect="default" className="h-full flex flex-col justify-between">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
