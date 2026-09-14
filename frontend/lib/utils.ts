@@ -35,26 +35,30 @@ export function cn(
  * Formats financial values in Indian Rupees (INR ₹) with standard Lakh/Crore grouping.
  */
 export function formatCurrency(
-  amount: string | number | null | undefined
+  amount: string | number | null | undefined,
+  options: { maximumFractionDigits?: number; minimumFractionDigits?: number } = {}
 ): string {
   if (amount === null || amount === undefined || amount === "") {
-    return "₹0.00";
+    return "₹0";
   }
 
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   if (isNaN(num)) {
-    return "₹0.00";
+    return "₹0";
   }
+
+  const maxDigits = options.maximumFractionDigits ?? (Number.isInteger(num) ? 0 : 2);
+  const minDigits = options.minimumFractionDigits ?? 0;
 
   try {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits,
     }).format(num);
   } catch {
-    return `₹${num.toFixed(2)}`;
+    return `₹${num.toLocaleString("en-IN")}`;
   }
 }
 
