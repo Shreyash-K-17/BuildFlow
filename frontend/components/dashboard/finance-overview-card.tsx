@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
@@ -20,6 +20,15 @@ export function FinanceOverviewCard({ finance }: FinanceOverviewCardProps) {
   const remainingNum = parseFloat(remaining_budget) || 0;
   const isOverBudget = remainingNum < 0;
   const utilizationClampedForBar = Math.min(Math.max(budget_utilization, 0), 100);
+
+  const [animatedWidth, setAnimatedWidth] = useState(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAnimatedWidth(utilizationClampedForBar);
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [utilizationClampedForBar]);
 
   const getStatusBadge = () => {
     if (isOverBudget) {
@@ -65,7 +74,7 @@ export function FinanceOverviewCard({ finance }: FinanceOverviewCardProps) {
         {/* Metric Triplet */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Total Budget */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5 flex flex-col justify-center">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Total Budget
             </span>
@@ -75,7 +84,7 @@ export function FinanceOverviewCard({ finance }: FinanceOverviewCardProps) {
           </div>
 
           {/* Total Expenses */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5 flex flex-col justify-center">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Total Expenses
             </span>
@@ -86,7 +95,7 @@ export function FinanceOverviewCard({ finance }: FinanceOverviewCardProps) {
 
           {/* Remaining Budget */}
           <div
-            className={`rounded-xl border p-3.5 ${
+            className={`rounded-xl border p-3.5 flex flex-col justify-center ${
               isOverBudget
                 ? "border-red-500/30 bg-red-500/10"
                 : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60"
@@ -141,8 +150,8 @@ export function FinanceOverviewCard({ finance }: FinanceOverviewCardProps) {
 
           <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${getBarColor()}`}
-              style={{ width: `${utilizationClampedForBar}%` }}
+              className={`h-full rounded-full transition-all duration-1000 ease-out motion-reduce:transition-none ${getBarColor()}`}
+              style={{ width: `${animatedWidth}%` }}
               role="progressbar"
               aria-valuenow={budget_utilization}
               aria-valuemin={0}

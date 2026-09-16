@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, CardHoverVariant } from "@/components/ui/card";
+import { Card, CardHoverVariant } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -48,34 +48,35 @@ export function KPICard({
   };
 
   return (
-    <Card hoverEffect={getHoverVariant()} className={cn(className)}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            {title}
-          </span>
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg transition-colors", iconVariants[variant])}>
-            {icon}
-          </div>
+    <Card
+      hoverEffect={getHoverVariant()}
+      className={cn("h-full p-5 sm:p-6 flex flex-col justify-center", className)}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {title}
+        </span>
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg transition-colors", iconVariants[variant])}>
+          {icon}
         </div>
+      </div>
 
-        <div className="mt-3 flex items-baseline justify-between gap-2">
-          <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-            {value}
-          </div>
-          {badge && (
-            <Badge variant={badgeVariant} className="shrink-0 text-[10px]">
-              {badge}
-            </Badge>
-          )}
+      <div className="mt-3 flex items-baseline justify-between gap-2">
+        <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
+          {value}
         </div>
-
-        {supportingText && (
-          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
-            {supportingText}
-          </p>
+        {badge && (
+          <Badge variant={badgeVariant} className="shrink-0 text-[10px]">
+            {badge}
+          </Badge>
         )}
-      </CardContent>
+      </div>
+
+      {supportingText && (
+        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+          {supportingText}
+        </p>
+      )}
     </Card>
   );
 }

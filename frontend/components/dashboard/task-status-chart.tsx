@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,6 +20,14 @@ export function TaskStatusChart({ tasks }: TaskStatusChartProps) {
   const { total, not_started, in_progress, blocked, on_hold, completed, average_progress } = tasks;
 
   const progressPercent = Math.min(Math.max(average_progress, 0), 100);
+  const [animatedWidth, setAnimatedWidth] = useState(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAnimatedWidth(progressPercent);
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [progressPercent]);
 
   const statusList = [
     { label: "In Progress", count: in_progress, color: "bg-amber-500", textColor: "text-amber-500" },
@@ -64,8 +72,8 @@ export function TaskStatusChart({ tasks }: TaskStatusChartProps) {
           {/* Progress bar container */}
           <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-amber-500 h-full rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
+              className="bg-amber-500 h-full rounded-full transition-all duration-1000 ease-out motion-reduce:transition-none"
+              style={{ width: `${animatedWidth}%` }}
               role="progressbar"
               aria-valuenow={progressPercent}
               aria-valuemin={0}

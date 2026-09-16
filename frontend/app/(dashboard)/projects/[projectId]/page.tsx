@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge";
 import { ProjectFormModal } from "@/components/projects/project-form-modal";
 import { PhaseList } from "@/components/phases/phase-list";
+import { ProjectAttendanceCard } from "@/components/attendance/project-attendance-card";
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -382,6 +383,9 @@ export default function ProjectDetailsPage() {
 
           {/* Work Breakdown Structure: Phases & Tasks */}
           <PhaseList projectId={projectId} />
+
+          {/* Workforce & Site Attendance */}
+          <ProjectAttendanceCard projectId={projectId} />
         </div>
 
         {/* Right Column: Metadata & System Info */}

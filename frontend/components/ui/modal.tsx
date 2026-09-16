@@ -56,7 +56,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       aria-modal="true"
       role="dialog"
       aria-labelledby={title ? "modal-title" : undefined}
@@ -70,18 +70,18 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          "w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200",
+          "w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto max-h-[calc(100vh-2rem)] flex flex-col",
           maxWidthStyles[maxWidth],
           className
         )}
       >
         {(title || description) && (
-          <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-start justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div>
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-lg font-semibold text-slate-900 dark:text-slate-100"
+                  className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100"
                 >
                   {title}
                 </h2>
@@ -98,7 +98,7 @@ export function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 ml-2"
               aria-label="Close dialog"
             >
               <svg
@@ -118,7 +118,7 @@ export function Modal({
           </div>
         )}
 
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

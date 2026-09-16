@@ -192,6 +192,12 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     return true;
   });
 
+  const handleNavClick = () => {
+    if (isOpen && onClose) {
+      onClose();
+    }
+  };
+
   const sidebarContent = (
     <div className="flex h-full flex-col justify-between bg-slate-950 text-slate-100 border-r border-slate-800/80">
       {/* Brand & Workspace */}
@@ -199,7 +205,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <div className="flex items-center justify-between h-16 px-5 border-b border-slate-800/80">
           <Link
             href={isAdmin ? "/dashboard" : "/projects"}
-            className="flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-lg"
+            onClick={handleNavClick}
+            className="flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-lg cursor-pointer select-none"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 text-slate-950 font-black shadow-sm">
               <svg
@@ -230,7 +237,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             <button
               type="button"
               onClick={onClose}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
               aria-label="Close navigation sidebar"
             >
               <svg
@@ -259,17 +266,15 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" &&
-                item.href !== "/projects" &&
-                pathname.startsWith(`${item.href}/`));
+              pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
+                onClick={handleNavClick}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group cursor-pointer select-none",
                   isActive
                     ? "bg-amber-500 text-slate-950 font-semibold shadow-sm"
                     : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
@@ -277,7 +282,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               >
                 <span
                   className={cn(
-                    "transition-colors",
+                    "transition-colors shrink-0",
                     isActive
                       ? "text-slate-950"
                       : "text-slate-400 group-hover:text-amber-400"
@@ -285,7 +290,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 >
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}

@@ -306,20 +306,55 @@ export function getTaskPriorityBadgeVariant(
   }
 }
 
+export function getAttendanceStatusLabel(status: AttendanceStatus): string {
+  switch (status) {
+    case "present":
+      return "Present";
+    case "half_day":
+      return "Half Day";
+    case "absent":
+      return "Absent";
+    case "leave":
+      return "Leave";
+    default:
+      return status;
+  }
+}
+
 export function getAttendanceStatusBadgeVariant(
   status: AttendanceStatus
-): "success" | "danger" | "warning" | "secondary" {
+): "success" | "warning" | "danger" | "info" {
   switch (status) {
     case "present":
       return "success";
-    case "absent":
-      return "danger";
     case "half_day":
       return "warning";
+    case "absent":
+      return "danger";
     case "leave":
-      return "secondary";
+      return "info";
     default:
-      return "secondary";
+      return "info";
+  }
+}
+
+export function formatTime(timeStr: string | null | undefined): string {
+  if (!timeStr) return "—";
+  try {
+    const parts = timeStr.split(":");
+    if (parts.length >= 2) {
+      let hours = parseInt(parts[0], 10);
+      const minutes = parts[1];
+      if (isNaN(hours)) return timeStr;
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const formattedHours = String(hours).padStart(2, "0");
+      return `${formattedHours}:${minutes} ${ampm}`;
+    }
+    return timeStr;
+  } catch {
+    return "—";
   }
 }
 
