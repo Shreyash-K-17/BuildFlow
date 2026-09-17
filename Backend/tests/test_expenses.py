@@ -1,6 +1,10 @@
 from datetime import date
+from decimal import Decimal
+from sqlalchemy import event
+
 from app.extensions import db
 from app.models import Organization, Project, Expense, User
+from app.services.expense_service import get_paginated_project_expenses
 
 
 def test_admin_can_create_expense(
@@ -62,6 +66,9 @@ def test_admin_can_get_project_expenses(
     assert len(data["data"]["expenses"]) >= 1
     expense_ids = [e["id"] for e in data["data"]["expenses"]]
     assert expense_id in expense_ids
+    assert "pagination" in data["data"]
+    assert data["data"]["pagination"]["page"] == 1
+    assert data["data"]["pagination"]["per_page"] == 25
 
 
 def test_worker_cannot_get_project_expenses(
@@ -301,3 +308,217 @@ def test_unauthenticated_cannot_access_expenses(
     )
     assert put_res.status_code == 401
     assert put_res.get_json()["error"]["code"] == "UNAUTHORIZED"
+
+
+# ============================================================
+# PAGINATION REGRESSION TESTS
+# ============================================================
+
+def test_expenses_default_pagination(client, auth_headers, project, app):
+    with app.app_context():
+        # Create 30 expenses
+        for i in range(30):
+            e = Expense(
+                organization_id=1,
+                project_id=project,
+                category="Material",
+                description=f"Expense {i+1}",
+                amount=Decimal("100.00"),
+                expense_date=date(2026, 9, 1 + (i % 28)),
+            )
+            db.session.add(e)
+        db.session.commit()
+
+    response = client.get(
+        f"/api/projects/{project}/expenses",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+
+    assert len(data["expenses"]) == 25
+    assert data["pagination"]["page"] == 1
+    assert data["pagination"]["per_page"] == 25
+    assert data["pagination"]["total"] == 30
+    assert data["pagination"]["pages"] == 2
+    assert float(data["total_expenses"]) == 3000.00
+
+
+def test_expenses_custom_pagination(client, auth_headers, project, app):
+    with app.app_context():
+        for i in range(25):
+            e = Expense(
+                organization_id=1,
+                project_id=project,
+                category="Labor",
+                description=f"Expense {i+1:02d}",
+                amount=Decimal("50.00"),
+                expense_date=date(2026, 9, 1 + (i % 28)),
+            )
+            db.session.add(e)
+        db.session.commit()
+
+    response = client.get(
+        f"/api/projects/{project}/expenses?page=2&per_page=10",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+
+    assert len(data["expenses"]) == 10
+    assert data["pagination"]["page"] == 2
+    assert data["pagination"]["per_page"] == 10
+    assert data["pagination"]["total"] == 25
+    assert data["pagination"]["pages"] == 3
+    assert float(data["total_expenses"]) == 1250.00
+
+
+def test_expenses_max_per_page(client, auth_headers, project):
+    response = client.get(
+        f"/api/projects/{project}/expenses?page=1&per_page=100",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["pagination"]["per_page"] == 100
+
+
+def test_expenses_over_max_per_page_returns_400(client, auth_headers, project):
+    response = client.get(
+        f"/api/projects/{project}/expenses?per_page=101",
+        headers=auth_headers,
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["success"] is False
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_expenses_invalid_pagination_parameters(client, auth_headers, project):
+    # page=0
+    res = client.get(
+        f"/api/projects/{project}/expenses?page=0",
+        headers=auth_headers,
+    )
+    assert res.status_code == 400
+    assert res.get_json()["error"]["code"] == "VALIDATION_ERROR"
+
+    # per_page=0
+    res = client.get(
+        f"/api/projects/{project}/expenses?per_page=0",
+        headers=auth_headers,
+    )
+    assert res.status_code == 400
+    assert res.get_json()["error"]["code"] == "VALIDATION_ERROR"
+
+    # non-numeric page
+    res = client.get(
+        f"/api/projects/{project}/expenses?page=abc",
+        headers=auth_headers,
+    )
+    assert res.status_code == 400
+    assert res.get_json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_expenses_page_beyond_last_page(client, auth_headers, project, app):
+    with app.app_context():
+        e = Expense(
+            organization_id=1,
+            project_id=project,
+            category="Material",
+            description="Only Expense",
+            amount=Decimal("150.00"),
+            expense_date=date(2026, 9, 10),
+        )
+        db.session.add(e)
+        db.session.commit()
+
+    response = client.get(
+        f"/api/projects/{project}/expenses?page=5&per_page=10",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["expenses"] == []
+    assert data["pagination"]["page"] == 5
+    assert data["pagination"]["total"] == 1
+    assert data["pagination"]["pages"] == 1
+    assert float(data["total_expenses"]) == 150.00
+
+
+def test_expenses_empty_project(client, auth_headers, project):
+    response = client.get(
+        f"/api/projects/{project}/expenses",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["expenses"] == []
+    assert data["pagination"]["total"] == 0
+    assert data["pagination"]["pages"] == 0
+    assert float(data["total_expenses"]) == 0.0
+
+
+def test_expenses_deterministic_ordering(client, auth_headers, project, app):
+    with app.app_context():
+        e1 = Expense(
+            organization_id=1,
+            project_id=project,
+            category="Material",
+            description="Old Expense",
+            amount=Decimal("100.00"),
+            expense_date=date(2026, 9, 1),
+        )
+        e2 = Expense(
+            organization_id=1,
+            project_id=project,
+            category="Labor",
+            description="New Expense 1",
+            amount=Decimal("200.00"),
+            expense_date=date(2026, 9, 15),
+        )
+        e3 = Expense(
+            organization_id=1,
+            project_id=project,
+            category="Equipment",
+            description="New Expense 2",
+            amount=Decimal("300.00"),
+            expense_date=date(2026, 9, 15),
+        )
+        db.session.add_all([e1, e2, e3])
+        db.session.commit()
+
+        e1_id = e1.id
+        e2_id = e2.id
+        e3_id = e3.id
+
+    response = client.get(
+        f"/api/projects/{project}/expenses",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    expenses = response.get_json()["data"]["expenses"]
+
+    # Expect: date 2026-09-15 with higher id (e3), then date 2026-09-15 with lower id (e2), then 2026-09-01 (e1)
+    assert [e["id"] for e in expenses] == [e3_id, e2_id, e1_id]
+
+
+def test_expenses_sql_pagination_used(app, project):
+    with app.app_context():
+        queries = []
+
+        def statement_listener(conn, cursor, statement, parameters, context, executemany):
+            queries.append(statement.upper())
+
+        event.listen(db.engine, "before_cursor_execute", statement_listener)
+        try:
+            expenses, total_amount, pagination = get_paginated_project_expenses(
+                project_id=project,
+                page=2,
+                per_page=10,
+            )
+            # Verify SQL contains LIMIT and OFFSET
+            select_queries = [q for q in queries if "LIMIT" in q and "OFFSET" in q]
+            assert len(select_queries) >= 1
+        finally:
+            event.remove(db.engine, "before_cursor_execute", statement_listener)

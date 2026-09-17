@@ -328,6 +328,7 @@ export interface ExpensesResponseData {
   project_id: number;
   total_expenses: string;
   expenses: Expense[];
+  pagination?: PaginationMetadata;
 }
 
 export type ProjectExpensesResponse = ExpensesResponseData;

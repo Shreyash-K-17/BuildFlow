@@ -9,6 +9,7 @@ from ..schemas.expense import (
 )
 from ..services.expense_service import (
     create_expense,
+    get_paginated_project_expenses,
     get_project_expenses,
     update_expense,
 )
@@ -159,24 +160,64 @@ def get_project_expenses_endpoint(
         current_user,
     )
 
-    expenses = get_project_expenses(
-        project.id
-    )
+    raw_page = request.args.get("page", 1)
+    raw_per_page = request.args.get("per_page", 25)
 
-    total = sum(
-        expense.amount
-        for expense in expenses
+    try:
+        page = int(raw_page)
+        per_page = int(raw_per_page)
+    except (ValueError, TypeError):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid pagination parameters: page and per_page must be integers.",
+            },
+        }), 400
+
+    if page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page > 100:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page cannot exceed 100.",
+            },
+        }), 400
+
+    expenses, total_amount, pagination = get_paginated_project_expenses(
+        project.id,
+        page=page,
+        per_page=per_page,
     )
 
     return jsonify({
         "success": True,
         "data": {
             "project_id": project.id,
-            "total_expenses": str(total),
+            "total_expenses": str(total_amount),
             "expenses": [
                 serialize_expense(expense)
                 for expense in expenses
             ],
+            "pagination": pagination,
         },
     }), 200
 

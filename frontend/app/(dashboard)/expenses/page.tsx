@@ -8,6 +8,7 @@ import {
   Expense,
   ProjectsResponseData,
   ExpensesResponseData,
+  PaginationMetadata,
 } from "@/types";
 import {
   Card,
@@ -65,6 +66,8 @@ export default function ExpensesPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(() => getSavedProjectId());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState<boolean>(false);
@@ -111,17 +114,21 @@ export default function ExpensesPage() {
     }, 4000);
   };
 
-  const refreshExpenses = useCallback(async (projId: number) => {
-    try {
-      const data = await api.get<ExpensesResponseData>(
-        `/projects/${projId}/expenses`
-      );
-      setExpenses(data.expenses || []);
-      setTotalExpenses(parseFloat(data.total_expenses || "0"));
-    } catch {
-      // Ignored for background refresh
-    }
-  }, []);
+  const refreshExpenses = useCallback(
+    async (projId: number, page: number = currentPage) => {
+      try {
+        const data = await api.get<ExpensesResponseData>(
+          `/projects/${projId}/expenses?page=${page}&per_page=25`
+        );
+        setExpenses(data.expenses || []);
+        setTotalExpenses(parseFloat(data.total_expenses || "0"));
+        setPagination(data.pagination || null);
+      } catch {
+        // Ignored for background refresh
+      }
+    },
+    [currentPage]
+  );
 
   const handleDeleteExpense = async () => {
     if (!deletingExpense) return;
@@ -172,6 +179,44 @@ export default function ExpensesPage() {
     };
   }, [isAdmin, resolveSelectedProject]);
 
+  const fetchExpenses = useCallback(
+    async (projId: number, page: number = 1) => {
+      setIsLoadingExpenses(true);
+      setError(null);
+      try {
+        const data = await api.get<ExpensesResponseData>(
+          `/projects/${projId}/expenses?page=${page}&per_page=25`
+        );
+        setExpenses(data.expenses || []);
+        setTotalExpenses(parseFloat(data.total_expenses || "0"));
+        if (data.pagination) {
+          setPagination(data.pagination);
+          setCurrentPage(data.pagination.page);
+        } else {
+          setPagination(null);
+          setCurrentPage(page);
+        }
+      } catch (err) {
+        const msg =
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load project expenses.";
+        setError(msg);
+        setExpenses([]);
+        setTotalExpenses(0);
+        setPagination(null);
+      } finally {
+        setIsLoadingExpenses(false);
+      }
+    },
+    []
+  );
+
+  const handlePageChange = (newPage: number) => {
+    if (!selectedProjectId || isLoadingExpenses) return;
+    fetchExpenses(selectedProjectId, newPage);
+  };
+
   // 2. Fetch Expenses when selectedProjectId changes
   useEffect(() => {
     if (!isAdmin || !selectedProjectId) return;
@@ -179,11 +224,20 @@ export default function ExpensesPage() {
     let isSubscribed = true;
 
     api
-      .get<ExpensesResponseData>(`/projects/${selectedProjectId}/expenses`)
+      .get<ExpensesResponseData>(
+        `/projects/${selectedProjectId}/expenses?page=1&per_page=25`
+      )
       .then((data) => {
         if (!isSubscribed) return;
         setExpenses(data.expenses || []);
         setTotalExpenses(parseFloat(data.total_expenses || "0"));
+        if (data.pagination) {
+          setPagination(data.pagination);
+          setCurrentPage(data.pagination.page);
+        } else {
+          setPagination(null);
+          setCurrentPage(1);
+        }
         setIsLoadingExpenses(false);
       })
       .catch((err) => {
@@ -195,6 +249,7 @@ export default function ExpensesPage() {
         setError(msg);
         setExpenses([]);
         setTotalExpenses(0);
+        setPagination(null);
         setIsLoadingExpenses(false);
       });
 
@@ -383,6 +438,7 @@ export default function ExpensesPage() {
                 const newId = Number(e.target.value);
                 setSelectedProjectId(newId);
                 saveSelectedProjectId(newId);
+                setCurrentPage(1);
               }}
               disabled={isLoadingProjects || projects.length === 0}
               className="w-full h-10 px-3.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors cursor-pointer"
@@ -576,8 +632,10 @@ export default function ExpensesPage() {
               Disbursement Ledger
             </CardTitle>
             <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Showing {filteredExpenses.length} of {expenses.length} transaction
-              {expenses.length === 1 ? "" : "s"} for{" "}
+              Showing {filteredExpenses.length} transaction
+              {filteredExpenses.length === 1 ? "" : "s"} on page{" "}
+              {pagination?.page || 1} of {pagination?.pages || 1} (
+              {pagination?.total ?? expenses.length} total recorded) for{" "}
               {selectedProject?.name || "selected project"}
             </CardDescription>
           </div>
@@ -685,6 +743,43 @@ export default function ExpensesPage() {
             </div>
           )}
         </CardContent>
+
+        {/* Pagination Controls */}
+        {pagination && pagination.pages > 0 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Showing page <span className="font-semibold text-slate-900 dark:text-white">{pagination.page}</span> of{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">{pagination.pages}</span> (
+              <span className="font-semibold text-slate-900 dark:text-white">{pagination.total}</span> total transactions)
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1 || isLoadingExpenses}
+                className="text-xs h-8 px-3"
+              >
+                ← Previous
+              </Button>
+
+              <div className="text-xs px-2.5 py-1 font-mono font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                {currentPage} / {pagination.pages}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= pagination.pages || isLoadingExpenses}
+                className="text-xs h-8 px-3"
+              >
+                Next →
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Expense Form Modal (Create / Edit) */}

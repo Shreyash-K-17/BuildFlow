@@ -1,3 +1,5 @@
+from sqlalchemy import func
+
 from ..extensions import db
 from ..models import Expense
 
@@ -50,6 +52,48 @@ def get_project_expenses(project_id):
         Expense.expense_date.desc(),
         Expense.id.desc(),
     ).all()
+
+
+def get_paginated_project_expenses(
+    project_id,
+    page=1,
+    per_page=25,
+):
+    base_query = Expense.query.filter_by(
+        project_id=project_id
+    )
+
+    total = base_query.count()
+
+    total_amount = (
+        db.session.query(
+            func.coalesce(func.sum(Expense.amount), 0)
+        )
+        .filter(Expense.project_id == project_id)
+        .scalar()
+    )
+
+    offset = (page - 1) * per_page
+    expenses = (
+        base_query.order_by(
+            Expense.expense_date.desc(),
+            Expense.id.desc(),
+        )
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    pagination = {
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": pages,
+    }
+
+    return expenses, total_amount, pagination
 
 
 def update_expense(

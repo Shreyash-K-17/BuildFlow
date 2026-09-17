@@ -84,6 +84,12 @@ class Expense(db.Model):
     )
 
     __table_args__ = (
+        db.Index(
+            "ix_expenses_project_date_id",
+            "project_id",
+            expense_date.desc(),
+            id.desc(),
+        ),
         db.CheckConstraint(
             "amount > 0",
             name="ck_expense_amount_positive",
