@@ -336,11 +336,20 @@ export interface ExpenseResponseData {
   expense: Expense;
 }
 
+export interface PaginationMetadata {
+  page: number;
+  per_page: number;
+  total: number;
+  pages: number;
+}
+
 export interface AuditLogsResponseData {
   audit_logs: AuditLog[];
+  pagination?: PaginationMetadata;
 }
 
 export type AuditLogsResponse = AuditLogsResponseData;
+
 
 // ============================================================
 // REQUEST PAYLOADS

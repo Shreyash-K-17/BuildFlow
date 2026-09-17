@@ -1,9 +1,7 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
-from ..extensions import db
-from ..models import AuditLog
+from ..services.audit_service import get_paginated_audit_logs
 from ..utils.auth import role_required
-from ..utils.organization import organization_scoped_query
 
 
 audit_bp = Blueprint(
@@ -17,22 +15,59 @@ audit_bp = Blueprint(
 # GET AUDIT LOGS
 # Admin only
 # Organization scoped
-# Newest first
+# Newest first, paginated
 # ============================================================
 
 @audit_bp.get("")
 @role_required("admin")
 def get_audit_logs(current_user):
-    query = organization_scoped_query(
-        AuditLog.query,
-        AuditLog,
-        current_user,
-    )
+    raw_page = request.args.get("page", 1)
+    raw_per_page = request.args.get("per_page", 25)
 
-    audit_logs = query.order_by(
-        AuditLog.created_at.desc(),
-        AuditLog.id.desc(),
-    ).all()
+    try:
+        page = int(raw_page)
+        per_page = int(raw_per_page)
+    except (ValueError, TypeError):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid pagination parameters: page and per_page must be integers.",
+            },
+        }), 400
+
+    if page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page > 100:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page cannot exceed 100.",
+            },
+        }), 400
+
+    audit_logs, total, pages = get_paginated_audit_logs(
+        organization_id=current_user.organization_id,
+        page=page,
+        per_page=per_page,
+    )
 
     return jsonify({
         "success": True,
@@ -54,6 +89,12 @@ def get_audit_logs(current_user):
                     ),
                 }
                 for audit_log in audit_logs
-            ]
+            ],
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": pages,
+            },
         },
     }), 200

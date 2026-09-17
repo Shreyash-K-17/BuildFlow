@@ -65,6 +65,15 @@ class AuditLog(db.Model):
         "User",
     )
 
+    __table_args__ = (
+        db.Index(
+            "ix_audit_logs_org_created_id",
+            "organization_id",
+            created_at.desc(),
+            id.desc(),
+        ),
+    )
+
     def __repr__(self):
         return (
             f"<AuditLog "

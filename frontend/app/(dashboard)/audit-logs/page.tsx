@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
-import { AuditLog, AuditLogsResponseData } from "@/types";
+import { AuditLog, AuditLogsResponseData, PaginationMetadata } from "@/types";
+
 import {
   Card,
   CardHeader,
@@ -39,6 +40,8 @@ export default function AuditLogsPage() {
   const isAdmin = user?.role === "admin";
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,24 +54,33 @@ export default function AuditLogsPage() {
   const [selectedLogForDiff, setSelectedLogForDiff] = useState<AuditLog | null>(null);
   const [isDiffModalOpen, setIsDiffModalOpen] = useState<boolean>(false);
 
-  const fetchAuditLogs = useCallback(async () => {
-    if (!isAdmin) return;
-    setIsLoading(true);
-    setError(null);
+  const fetchAuditLogs = useCallback(
+    async (pageToFetch: number = currentPage) => {
+      if (!isAdmin) return;
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const data = await api.get<AuditLogsResponseData>("/audit-logs");
-      setAuditLogs(data.audit_logs || []);
-    } catch (err) {
-      const msg =
-        err instanceof ApiError
-          ? err.message
-          : "Failed to load organizational audit trail.";
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isAdmin]);
+      try {
+        const data = await api.get<AuditLogsResponseData>(
+          `/audit-logs?page=${pageToFetch}&per_page=25`
+        );
+        setAuditLogs(data.audit_logs || []);
+        if (data.pagination) {
+          setPagination(data.pagination);
+          setCurrentPage(data.pagination.page);
+        }
+      } catch (err) {
+        const msg =
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load organizational audit trail.";
+        setError(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isAdmin, currentPage]
+  );
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -76,10 +88,14 @@ export default function AuditLogsPage() {
     let isSubscribed = true;
 
     api
-      .get<AuditLogsResponseData>("/audit-logs")
+      .get<AuditLogsResponseData>(`/audit-logs?page=${currentPage}&per_page=25`)
       .then((data) => {
         if (!isSubscribed) return;
         setAuditLogs(data.audit_logs || []);
+        if (data.pagination) {
+          setPagination(data.pagination);
+          setCurrentPage(data.pagination.page);
+        }
         setIsLoading(false);
       })
       .catch((err) => {
@@ -95,7 +111,14 @@ export default function AuditLogsPage() {
     return () => {
       isSubscribed = false;
     };
-  }, [isAdmin]);
+  }, [isAdmin, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    if (pagination && newPage > pagination.pages && pagination.pages > 0) return;
+    setCurrentPage(newPage);
+    fetchAuditLogs(newPage);
+  };
 
   // Filtered Audit Logs
   const filteredLogs = useMemo(() => {
@@ -180,7 +203,7 @@ export default function AuditLogsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchAuditLogs}
+            onClick={() => fetchAuditLogs(currentPage)}
             disabled={isLoading}
             className="text-xs"
           >
@@ -208,7 +231,7 @@ export default function AuditLogsPage() {
             </svg>
             <span>{error}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchAuditLogs}>
+          <Button variant="outline" size="sm" onClick={() => fetchAuditLogs(currentPage)}>
             Retry
           </Button>
         </div>
@@ -298,8 +321,9 @@ export default function AuditLogsPage() {
               Audit Event Stream
             </CardTitle>
             <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Showing {filteredLogs.length} of {auditLogs.length} logged event
-              {auditLogs.length === 1 ? "" : "s"}
+              Showing {filteredLogs.length} event{filteredLogs.length === 1 ? "" : "s"} on page{" "}
+              {pagination?.page || 1} of {pagination?.pages || 1} (
+              {pagination?.total ?? auditLogs.length} total recorded)
             </CardDescription>
           </div>
         </CardHeader>
@@ -390,6 +414,43 @@ export default function AuditLogsPage() {
             </div>
           )}
         </CardContent>
+
+        {/* Pagination Controls */}
+        {pagination && pagination.pages > 0 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Showing page <span className="font-semibold text-slate-900 dark:text-white">{pagination.page}</span> of{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">{pagination.pages}</span> (
+              <span className="font-semibold text-slate-900 dark:text-white">{pagination.total}</span> total events)
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1 || isLoading}
+                className="text-xs h-8 px-3"
+              >
+                ← Previous
+              </Button>
+
+              <div className="text-xs px-2.5 py-1 font-mono font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                {currentPage} / {pagination.pages}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= pagination.pages || isLoading}
+                className="text-xs h-8 px-3"
+              >
+                Next →
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Audit Diff Inspector Modal */}
