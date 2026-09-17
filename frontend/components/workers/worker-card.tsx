@@ -4,7 +4,7 @@ import React from "react";
 import { Worker } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface WorkerCardProps {
   worker: Worker;
@@ -45,6 +45,14 @@ export function WorkerCard({ worker, isAdmin, onEdit }: WorkerCardProps) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
             <span className="truncate">{worker.email}</span>
             {worker.phone && <span>• {worker.phone}</span>}
+          </div>
+
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+            {worker.joined_date ? (
+              <span>Working since {formatDate(worker.joined_date)}</span>
+            ) : (
+              <span className="italic text-slate-400 dark:text-slate-500">Joining date not provided</span>
+            )}
           </div>
         </div>
 

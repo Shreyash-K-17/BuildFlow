@@ -8,6 +8,7 @@ from ..services.task_dependency_service import (
     get_dependencies,
     delete_dependency,
 )
+from ..services.audit_service import create_audit_log
 from ..utils.auth import role_required
 from ..utils.organization import ensure_same_organization
 
@@ -110,6 +111,20 @@ def create_dependency_endpoint(task_id, current_user):
             depends_on_task,
         )
 
+        create_audit_log(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            action="create",
+            entity_type="task_dependency",
+            entity_id=dependency.id,
+            new_values={
+                "task_id": dependency.task_id,
+                "depends_on_task_id": dependency.depends_on_task_id,
+            },
+        )
+
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Task dependency created successfully.",
@@ -121,6 +136,8 @@ def create_dependency_endpoint(task_id, current_user):
         }), 201
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -223,9 +240,29 @@ def delete_task_dependency(
             },
         }), 404
 
-    delete_dependency(dependency)
+    try:
+        old_values = {
+            "task_id": dependency.task_id,
+            "depends_on_task_id": dependency.depends_on_task_id,
+        }
 
-    return jsonify({
-        "success": True,
-        "message": "Task dependency deleted successfully.",
-    }), 200
+        create_audit_log(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            action="delete",
+            entity_type="task_dependency",
+            entity_id=dependency.id,
+            old_values=old_values,
+        )
+
+        delete_dependency(dependency)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Task dependency deleted successfully.",
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        raise

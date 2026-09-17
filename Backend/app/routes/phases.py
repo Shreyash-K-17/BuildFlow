@@ -13,6 +13,7 @@ from ..services.phase_service import (
     get_all_phases,
     update_phase,
 )
+from ..services.audit_service import create_audit_log
 from ..utils.auth import role_required
 from ..utils.organization import ensure_same_organization
 
@@ -26,6 +27,15 @@ phases_bp = Blueprint(
 
 create_phase_schema = CreatePhaseSchema()
 update_phase_schema = UpdatePhaseSchema()
+
+
+def get_phase_audit_values(phase):
+    return {
+        "project_id": phase.project_id,
+        "name": phase.name,
+        "description": phase.description,
+        "phase_order": phase.phase_order,
+    }
 
 
 def serialize_phase(phase):
@@ -73,6 +83,17 @@ def create_phase_endpoint(project_id, current_user):
             phase_order=data["phase_order"],
         )
 
+        create_audit_log(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            action="create",
+            entity_type="phase",
+            entity_id=phase.id,
+            new_values=get_phase_audit_values(phase),
+        )
+
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": "Phase created successfully.",
@@ -82,6 +103,8 @@ def create_phase_endpoint(project_id, current_user):
         }), 201
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -92,6 +115,8 @@ def create_phase_endpoint(project_id, current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -209,12 +234,26 @@ def update_phase_endpoint(phase_id, current_user):
             request.get_json() or {}
         )
 
+        old_values = get_phase_audit_values(phase)
+
         phase = update_phase(
             phase=phase,
             name=data.get("name"),
             description=data.get("description"),
             phase_order=data.get("phase_order"),
         )
+
+        create_audit_log(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            action="update",
+            entity_type="phase",
+            entity_id=phase.id,
+            old_values=old_values,
+            new_values=get_phase_audit_values(phase),
+        )
+
+        db.session.commit()
 
         return jsonify({
             "success": True,
@@ -225,6 +264,8 @@ def update_phase_endpoint(phase_id, current_user):
         }), 200
 
     except ValidationError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {
@@ -235,6 +276,8 @@ def update_phase_endpoint(phase_id, current_user):
         }), 400
 
     except ValueError as error:
+        db.session.rollback()
+
         return jsonify({
             "success": False,
             "error": {

@@ -56,6 +56,7 @@ export interface Worker {
   email: string;
   worker_type: string | null;
   daily_wage: string | null;
+  joined_date?: string | null;
   is_active: boolean;
 }
 
@@ -365,6 +366,7 @@ export interface CreateWorkerPayload {
   phone?: string | null;
   worker_type?: string | null;
   daily_wage?: string | number | null;
+  joined_date?: string | null;
 }
 
 export interface UpdateWorkerPayload {
@@ -374,6 +376,7 @@ export interface UpdateWorkerPayload {
   phone?: string | null;
   worker_type?: string | null;
   daily_wage?: string | number | null;
+  joined_date?: string | null;
   is_active?: boolean;
 }
 

@@ -88,7 +88,8 @@ def create_dependency(task, depends_on_task):
     )
 
     db.session.add(dependency)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(dependency)
 
     return dependency
 
@@ -101,4 +102,4 @@ def get_dependencies(task_id):
 
 def delete_dependency(dependency):
     db.session.delete(dependency)
-    db.session.commit()
+    db.session.flush()

@@ -17,6 +17,7 @@ def create_worker(
     phone=None,
     worker_type=None,
     daily_wage=None,
+    joined_date=None,
 ):
     username = username.strip()
     email = email.strip().lower()
@@ -84,6 +85,7 @@ def create_worker(
         ),
         daily_wage=daily_wage,
         is_active=True,
+        joined_date=joined_date,
     )
 
     db.session.add(worker)
@@ -97,6 +99,8 @@ def create_worker(
 # UPDATE WORKER
 # ============================================================
 
+UNSET = object()
+
 def update_worker(
     worker,
     username=None,
@@ -106,6 +110,7 @@ def update_worker(
     worker_type=None,
     daily_wage=None,
     is_active=None,
+    joined_date=UNSET,
 ):
     # --------------------------------------------------------
     # Get linked login account
@@ -224,6 +229,13 @@ def update_worker(
 
         if user is not None:
             user.is_active = is_active
+
+    # --------------------------------------------------------
+    # Joined date
+    # --------------------------------------------------------
+
+    if joined_date is not UNSET:
+        worker.joined_date = joined_date
 
     db.session.flush()
     db.session.refresh(worker)

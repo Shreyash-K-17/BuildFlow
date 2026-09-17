@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Worker, WorkersResponseData } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -382,6 +382,7 @@ export default function WorkersPage() {
                       <th className="py-3 px-4">Trade</th>
                       <th className="py-3 px-4">Contact</th>
                       <th className="py-3 px-4">Daily Wage</th>
+                      <th className="py-3 px-4">Joined</th>
                       <th className="py-3 px-4">Status</th>
                       <th className="py-3 px-4">Linked User</th>
                       <th className="py-3 px-4 text-right">Actions</th>
@@ -432,6 +433,15 @@ export default function WorkersPage() {
                             </span>
                           ) : (
                             <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        {/* Joined */}
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {worker.joined_date ? (
+                            <span>{formatDate(worker.joined_date)}</span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 italic">Not provided</span>
                           )}
                         </td>
 

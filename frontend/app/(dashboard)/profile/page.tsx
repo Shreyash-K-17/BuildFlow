@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { Worker, WorkersResponseData } from "@/types";
+import { formatDate } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -13,10 +16,42 @@ import { Badge } from "@/components/ui/badge";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const [workerProfile, setWorkerProfile] = useState<Worker | null>(null);
+  const [isLoadingWorker, setIsLoadingWorker] = useState<boolean>(
+    () => user?.role === "worker"
+  );
+
+  const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    if (!user || user.role !== "worker") return;
+
+    let isSubscribed = true;
+
+    api
+      .get<WorkersResponseData>("/workers")
+      .then((data) => {
+        if (!isSubscribed) return;
+        if (data.workers && data.workers.length > 0) {
+          setWorkerProfile(data.workers[0]);
+        }
+      })
+      .catch(() => {
+        // Keep null if failed
+      })
+      .finally(() => {
+        if (isSubscribed) {
+          setIsLoadingWorker(false);
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
 
   if (!user) return null;
 
-  const isAdmin = user.role === "admin";
   const initials = user.username
     ? user.username.slice(0, 2).toUpperCase()
     : "BF";
@@ -94,6 +129,21 @@ export default function ProfilePage() {
                 </Badge>
               </div>
             </div>
+
+            {!isAdmin && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Member Since
+                </span>
+                <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {isLoadingWorker
+                    ? "—"
+                    : workerProfile?.joined_date
+                    ? formatDate(workerProfile.joined_date)
+                    : "Not provided"}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 p-4 text-xs text-slate-500 dark:text-slate-400">

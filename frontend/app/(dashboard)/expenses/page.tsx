@@ -28,13 +28,41 @@ import {
   EXPENSE_CATEGORIES,
 } from "@/components/expenses/expense-category-badge";
 import { ExpenseFormModal } from "@/components/expenses/expense-form-modal";
+import { Modal } from "@/components/ui/modal";
+
+const EXPENSES_PROJECT_STORAGE_KEY = "buildflow-expenses-selected-project";
+
+function getSavedProjectId(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem(EXPENSES_PROJECT_STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = parseInt(saved, 10);
+    return isNaN(parsed) ? null : parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveSelectedProjectId(id: number | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (id !== null) {
+      localStorage.setItem(EXPENSES_PROJECT_STORAGE_KEY, String(id));
+    } else {
+      localStorage.removeItem(EXPENSES_PROJECT_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export default function ExpensesPage() {
   const { user, isLoading: authLoading } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(() => getSavedProjectId());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
 
@@ -53,6 +81,28 @@ export default function ExpensesPage() {
   // Modal State
   const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const resolveSelectedProject = useCallback((loadedProjects: Project[]) => {
+    if (loadedProjects.length === 0) {
+      setSelectedProjectId(null);
+      saveSelectedProjectId(null);
+      return;
+    }
+
+    const savedId = getSavedProjectId();
+    const existing = savedId !== null ? loadedProjects.find((p) => p.id === savedId) : undefined;
+
+    if (existing) {
+      setSelectedProjectId(existing.id);
+      saveSelectedProjectId(existing.id);
+    } else {
+      const fallbackId = loadedProjects[0].id;
+      setSelectedProjectId(fallbackId);
+      saveSelectedProjectId(fallbackId);
+    }
+  }, []);
 
   const showToast = (type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
@@ -73,6 +123,25 @@ export default function ExpensesPage() {
     }
   }, []);
 
+  const handleDeleteExpense = async () => {
+    if (!deletingExpense) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/expenses/${deletingExpense.id}`);
+      showToast("success", "Expense deleted successfully.");
+      setDeletingExpense(null);
+      if (selectedProjectId) {
+        await refreshExpenses(selectedProjectId);
+      }
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.message : "Failed to delete expense.";
+      showToast("error", msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // 1. Fetch Projects on mount
   useEffect(() => {
     if (!isAdmin) return;
@@ -85,14 +154,7 @@ export default function ExpensesPage() {
         if (!isSubscribed) return;
         const fetchedProjects = data.projects || [];
         setProjects(fetchedProjects);
-        if (fetchedProjects.length > 0) {
-          setSelectedProjectId((prev) => {
-            if (prev && fetchedProjects.some((p) => p.id === prev)) {
-              return prev;
-            }
-            return fetchedProjects[0].id;
-          });
-        }
+        resolveSelectedProject(fetchedProjects);
         setIsLoadingProjects(false);
       })
       .catch((err) => {
@@ -108,7 +170,7 @@ export default function ExpensesPage() {
     return () => {
       isSubscribed = false;
     };
-  }, [isAdmin]);
+  }, [isAdmin, resolveSelectedProject]);
 
   // 2. Fetch Expenses when selectedProjectId changes
   useEffect(() => {
@@ -317,7 +379,11 @@ export default function ExpensesPage() {
             <select
               id="select-project-dropdown"
               value={selectedProjectId || 0}
-              onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+              onChange={(e) => {
+                const newId = Number(e.target.value);
+                setSelectedProjectId(newId);
+                saveSelectedProjectId(newId);
+              }}
               disabled={isLoadingProjects || projects.length === 0}
               className="w-full h-10 px-3.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors cursor-pointer"
             >
@@ -587,17 +653,30 @@ export default function ExpensesPage() {
                         {formatCurrency(expense.amount)}
                       </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingExpense(expense);
-                            setIsFormModalOpen(true);
-                          }}
-                          className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-500 hover:bg-amber-500/10 px-2.5 py-1 h-auto"
-                        >
-                          Edit
-                        </Button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingExpense(expense);
+                              setIsFormModalOpen(true);
+                            }}
+                            className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-500 hover:bg-amber-500/10 px-2.5 py-1 h-auto"
+                          >
+                            Edit
+                          </Button>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeletingExpense(expense)}
+                              className="text-xs text-red-600 dark:text-red-400 hover:text-red-500 hover:bg-red-500/10 px-2.5 py-1 h-auto"
+                              aria-label={`Delete expense ${expense.description || expense.id}`}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -630,6 +709,83 @@ export default function ExpensesPage() {
         projectId={selectedProjectId || undefined}
         projects={projects}
       />
+
+      {/* Delete Expense Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(deletingExpense)}
+        onClose={() => {
+          if (!isDeleting) setDeletingExpense(null);
+        }}
+        title="Delete Expense"
+        description="Permanently remove this disbursement record from the project ledger."
+        maxWidth="md"
+      >
+        {deletingExpense && (
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 space-y-2">
+              <div className="flex justify-between items-start text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  Description
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100 text-right max-w-[200px] truncate">
+                  {deletingExpense.description || "—"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  Amount
+                </span>
+                <span className="font-bold text-red-600 dark:text-red-400 font-mono">
+                  {formatCurrency(deletingExpense.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  Category
+                </span>
+                <span>
+                  <ExpenseCategoryBadge category={deletingExpense.category} />
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  Project
+                </span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {selectedProject?.name || "Active Project"}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2.5">
+              <span className="text-base shrink-0 leading-none">⚠️</span>
+              <p className="leading-relaxed">
+                This deletion will be permanently logged in the system audit trail. The project expense total and budget utilization will update immediately.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeletingExpense(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleDeleteExpense}
+                isLoading={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white border-red-700 shadow-sm"
+              >
+                Delete Expense
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

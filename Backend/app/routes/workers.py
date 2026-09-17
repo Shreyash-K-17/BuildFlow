@@ -9,6 +9,7 @@ from ..schemas.worker import (
     UpdateWorkerSchema,
 )
 from ..services.worker_service import (
+    UNSET,
     create_worker,
     update_worker,
 )
@@ -46,7 +47,35 @@ def get_worker_audit_values(worker):
             else None
         ),
         "is_active": worker.is_active,
+        "joined_date": (
+            worker.joined_date.isoformat()
+            if worker.joined_date
+            else None
+        ),
         "user_id": worker.user_id,
+    }
+
+
+def serialize_worker(worker):
+    return {
+        "id": worker.id,
+        "name": worker.name,
+        "phone": worker.phone,
+        "email": worker.email,
+        "worker_type": worker.worker_type,
+        "daily_wage": (
+            str(worker.daily_wage)
+            if worker.daily_wage is not None
+            else None
+        ),
+        "is_active": worker.is_active,
+        "joined_date": (
+            worker.joined_date.isoformat()
+            if worker.joined_date
+            else None
+        ),
+        "user_id": worker.user_id,
+        "organization_id": worker.organization_id,
     }
 
 
@@ -72,6 +101,7 @@ def create_worker_endpoint(current_user):
             phone=data.get("phone"),
             worker_type=data.get("worker_type"),
             daily_wage=data.get("daily_wage"),
+            joined_date=data.get("joined_date"),
         )
 
         # ----------------------------------------------------
@@ -93,21 +123,7 @@ def create_worker_endpoint(current_user):
             "success": True,
             "message": "Worker created successfully.",
             "data": {
-                "worker": {
-                    "id": worker.id,
-                    "name": worker.name,
-                    "phone": worker.phone,
-                    "email": worker.email,
-                    "worker_type": worker.worker_type,
-                    "daily_wage": (
-                        str(worker.daily_wage)
-                        if worker.daily_wage is not None
-                        else None
-                    ),
-                    "is_active": worker.is_active,
-                    "user_id": worker.user_id,
-                    "organization_id": worker.organization_id,
-                }
+                "worker": serialize_worker(worker)
             },
         }), 201
 
@@ -181,21 +197,7 @@ def get_workers(current_user):
         "success": True,
         "data": {
             "workers": [
-                {
-                    "id": worker.id,
-                    "name": worker.name,
-                    "phone": worker.phone,
-                    "email": worker.email,
-                    "worker_type": worker.worker_type,
-                    "daily_wage": (
-                        str(worker.daily_wage)
-                        if worker.daily_wage is not None
-                        else None
-                    ),
-                    "is_active": worker.is_active,
-                    "user_id": worker.user_id,
-                    "organization_id": worker.organization_id,
-                }
+                serialize_worker(worker)
                 for worker in workers
             ]
         },
@@ -227,21 +229,7 @@ def get_worker(worker_id, current_user):
     return jsonify({
         "success": True,
         "data": {
-            "worker": {
-                "id": worker.id,
-                "name": worker.name,
-                "phone": worker.phone,
-                "email": worker.email,
-                "worker_type": worker.worker_type,
-                "daily_wage": (
-                    str(worker.daily_wage)
-                    if worker.daily_wage is not None
-                    else None
-                ),
-                "is_active": worker.is_active,
-                "user_id": worker.user_id,
-                "organization_id": worker.organization_id,
-            }
+            "worker": serialize_worker(worker)
         },
     }), 200
 
@@ -288,6 +276,12 @@ def update_worker_endpoint(worker_id, current_user):
         # Update worker
         # ----------------------------------------------------
 
+        joined_date_param = (
+            data["joined_date"]
+            if "joined_date" in data
+            else UNSET
+        )
+
         worker, user = update_worker(
             worker=worker,
             username=data.get("username"),
@@ -297,6 +291,7 @@ def update_worker_endpoint(worker_id, current_user):
             worker_type=data.get("worker_type"),
             daily_wage=data.get("daily_wage"),
             is_active=data.get("is_active"),
+            joined_date=joined_date_param,
         )
 
         # ----------------------------------------------------
@@ -319,21 +314,7 @@ def update_worker_endpoint(worker_id, current_user):
             "success": True,
             "message": "Worker updated successfully.",
             "data": {
-                "worker": {
-                    "id": worker.id,
-                    "name": worker.name,
-                    "phone": worker.phone,
-                    "email": worker.email,
-                    "worker_type": worker.worker_type,
-                    "daily_wage": (
-                        str(worker.daily_wage)
-                        if worker.daily_wage is not None
-                        else None
-                    ),
-                    "is_active": worker.is_active,
-                    "user_id": worker.user_id,
-                    "organization_id": worker.organization_id,
-                }
+                "worker": serialize_worker(worker)
             },
         }), 200
 

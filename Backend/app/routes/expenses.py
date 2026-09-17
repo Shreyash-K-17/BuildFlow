@@ -268,3 +268,55 @@ def update_expense_endpoint(
     except Exception:
         db.session.rollback()
         raise
+
+
+@expenses_bp.delete(
+    "/expenses/<int:expense_id>"
+)
+@role_required("admin")
+def delete_expense_endpoint(
+    expense_id,
+    current_user,
+):
+    expense = db.session.get(
+        Expense,
+        expense_id,
+    )
+
+    if expense is None:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "NOT_FOUND",
+                "message": "Expense not found.",
+            },
+        }), 404
+
+    ensure_same_organization(
+        expense,
+        current_user,
+    )
+
+    try:
+        old_values = get_expense_audit_values(expense)
+
+        create_audit_log(
+            organization_id=current_user.organization_id,
+            user_id=current_user.id,
+            action="delete",
+            entity_type="expense",
+            entity_id=expense.id,
+            old_values=old_values,
+        )
+
+        db.session.delete(expense)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Expense deleted successfully.",
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        raise

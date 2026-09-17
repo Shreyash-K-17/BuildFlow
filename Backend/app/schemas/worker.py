@@ -51,6 +51,11 @@ class CreateWorkerSchema(Schema):
         as_string=True
     )
 
+    joined_date = fields.Date(
+        required=False,
+        allow_none=True
+    )
+
     @validates("username")
     def validate_username(self, value, **kwargs):
         if not value.strip():
@@ -123,6 +128,11 @@ class UpdateWorkerSchema(Schema):
 
     is_active = fields.Bool(
         required=False
+    )
+
+    joined_date = fields.Date(
+        required=False,
+        allow_none=True
     )
 
     @validates("username")

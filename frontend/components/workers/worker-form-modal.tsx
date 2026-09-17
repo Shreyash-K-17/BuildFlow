@@ -27,6 +27,7 @@ interface FormState {
   phone: string;
   worker_type: string;
   daily_wage: string;
+  joined_date: string;
   is_active: boolean;
 }
 
@@ -64,6 +65,7 @@ function WorkerFormContent({
     phone: initialData?.phone || "",
     worker_type: initialData?.worker_type || "",
     daily_wage: initialData?.daily_wage ? String(initialData.daily_wage) : "",
+    joined_date: initialData?.joined_date || "",
     is_active: initialData?.is_active ?? true,
   }));
 
@@ -151,6 +153,7 @@ function WorkerFormContent({
     const wageValue = formData.daily_wage.trim()
       ? parseFloat(formData.daily_wage)
       : null;
+    const joinedDateValue = formData.joined_date.trim() || null;
 
     try {
       if (isEdit && initialData) {
@@ -160,6 +163,7 @@ function WorkerFormContent({
           phone: formData.phone.trim() || null,
           worker_type: formData.worker_type.trim() || null,
           daily_wage: wageValue,
+          joined_date: joinedDateValue,
           is_active: formData.is_active,
         };
 
@@ -182,6 +186,7 @@ function WorkerFormContent({
           phone: formData.phone.trim() || null,
           worker_type: formData.worker_type.trim() || null,
           daily_wage: wageValue,
+          joined_date: joinedDateValue,
         };
 
         const res = await api.post<WorkerResponseData>("/workers", payload);
@@ -333,6 +338,19 @@ function WorkerFormContent({
           value={formData.daily_wage}
           onChange={(e) => handleChange("daily_wage", e.target.value)}
           error={errors.daily_wage}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Joined Date */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Input
+          id="worker-joined-date"
+          type="date"
+          label="Joined Date"
+          value={formData.joined_date}
+          onChange={(e) => handleChange("joined_date", e.target.value)}
+          error={errors.joined_date}
           disabled={isSubmitting}
         />
       </div>

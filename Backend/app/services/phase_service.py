@@ -24,7 +24,8 @@ def create_phase(
     )
 
     db.session.add(phase)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(phase)
 
     return phase
 
@@ -73,6 +74,7 @@ def update_phase(
 
         phase.phase_order = phase_order
 
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(phase)
 
     return phase
