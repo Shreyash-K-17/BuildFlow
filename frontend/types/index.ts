@@ -324,6 +324,7 @@ export interface InventoryTransactionResponseData {
 
 export interface InventoryTransactionsResponseData {
   transactions: InventoryTransaction[];
+  pagination?: PaginationMetadata;
 }
 
 export interface ExpensesResponseData {

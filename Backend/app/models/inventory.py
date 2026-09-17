@@ -81,6 +81,12 @@ class InventoryTransaction(db.Model):
             "unit_cost IS NULL OR unit_cost >= 0",
             name="ck_inventory_unit_cost_nonnegative",
         ),
+
+        db.Index(
+            "ix_inventory_transactions_material_id_id",
+            "material_id",
+            id.desc(),
+        ),
     )
 
     def __repr__(self):

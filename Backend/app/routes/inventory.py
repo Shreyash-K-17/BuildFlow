@@ -14,6 +14,7 @@ from ..services.inventory_service import (
     create_inventory_transaction,
     create_material,
     get_materials,
+    get_paginated_inventory_transactions,
     update_material,
 )
 from ..services.audit_service import create_audit_log
@@ -405,11 +406,53 @@ def get_material_transactions(
         current_user,
     )
 
-    transactions = InventoryTransaction.query.filter_by(
-        material_id=material.id
-    ).order_by(
-        InventoryTransaction.id.desc()
-    ).all()
+    raw_page = request.args.get("page", 1)
+    raw_per_page = request.args.get("per_page", 25)
+
+    try:
+        page = int(raw_page)
+        per_page = int(raw_per_page)
+    except (ValueError, TypeError):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid pagination parameters: page and per_page must be integers.",
+            },
+        }), 400
+
+    if page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page > 100:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page cannot exceed 100.",
+            },
+        }), 400
+
+    transactions, total, pages = get_paginated_inventory_transactions(
+        material_id=material.id,
+        page=page,
+        per_page=per_page,
+    )
 
     return jsonify({
         "success": True,
@@ -417,6 +460,12 @@ def get_material_transactions(
             "transactions": [
                 serialize_transaction(transaction)
                 for transaction in transactions
-            ]
+            ],
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": pages,
+            },
         },
     }), 200

@@ -163,3 +163,29 @@ def create_inventory_transaction(
     db.session.refresh(material)
 
     return transaction, material
+
+
+def get_paginated_inventory_transactions(
+    material_id,
+    page=1,
+    per_page=25,
+):
+    query = InventoryTransaction.query.filter_by(
+        material_id=material_id
+    )
+
+    total = query.count()
+
+    offset = (page - 1) * per_page
+    records = (
+        query.order_by(
+            InventoryTransaction.id.desc(),
+        )
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    return records, total, pages

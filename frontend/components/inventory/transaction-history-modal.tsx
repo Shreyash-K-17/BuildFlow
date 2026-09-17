@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Material,
   Project,
   InventoryTransaction,
   InventoryTransactionsResponseData,
+  PaginationMetadata,
 } from "@/types";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -32,17 +33,20 @@ function TransactionHistoryContent({
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
 
-  const fetchTransactions = () => {
+  const fetchTransactions = useCallback((pageToFetch: number = currentPage) => {
     setIsLoading(true);
     setError(null);
 
     api
       .get<InventoryTransactionsResponseData>(
-        `/materials/${material.id}/transactions`
+        `/materials/${material.id}/transactions?page=${pageToFetch}&per_page=25`
       )
       .then((data) => {
         setTransactions(data.transactions || []);
+        setPagination(data.pagination || null);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -53,18 +57,19 @@ function TransactionHistoryContent({
         }
         setIsLoading(false);
       });
-  };
+  }, [material.id, currentPage]);
 
   useEffect(() => {
     let isSubscribed = true;
 
     api
       .get<InventoryTransactionsResponseData>(
-        `/materials/${material.id}/transactions`
+        `/materials/${material.id}/transactions?page=${currentPage}&per_page=25`
       )
       .then((data) => {
         if (!isSubscribed) return;
         setTransactions(data.transactions || []);
+        setPagination(data.pagination || null);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -80,7 +85,13 @@ function TransactionHistoryContent({
     return () => {
       isSubscribed = false;
     };
-  }, [material.id]);
+  }, [material.id, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    if (pagination && newPage > pagination.pages && pagination.pages > 0) return;
+    setCurrentPage(newPage);
+  };
 
   const getProjectName = (projectId: number | null): string | null => {
     if (!projectId) return null;
@@ -88,10 +99,12 @@ function TransactionHistoryContent({
     return project ? project.name : `Project #${projectId}`;
   };
 
+  const totalCount = pagination?.total ?? transactions.length;
+
   return (
     <div className="space-y-4">
       {/* Material Summary Strip */}
-      <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
+      <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs flex-wrap gap-2">
         <div>
           <span className="font-semibold text-slate-900 dark:text-slate-100">
             {material.name}
@@ -101,6 +114,13 @@ function TransactionHistoryContent({
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-slate-500 dark:text-slate-400">
+            Total Logs:{" "}
+            <strong className="text-slate-900 dark:text-slate-100">
+              {totalCount}
+            </strong>
+          </span>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
           <span className="text-slate-500 dark:text-slate-400">
             Current Stock:{" "}
             <strong className="text-slate-900 dark:text-slate-100">
@@ -127,7 +147,7 @@ function TransactionHistoryContent({
             type="button"
             variant="outline"
             size="sm"
-            onClick={fetchTransactions}
+            onClick={() => fetchTransactions(currentPage)}
             className="text-xs"
           >
             Try Again
@@ -213,6 +233,45 @@ function TransactionHistoryContent({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination && pagination.pages > 0 && (
+        <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs">
+          <div className="text-slate-500 dark:text-slate-400">
+            Showing page <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.page}</span> of{" "}
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.pages}</span> (
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.total}</span> total transactions)
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1 || isLoading}
+              className="text-xs h-8 px-3"
+            >
+              ← Previous
+            </Button>
+
+            <div className="text-xs px-2.5 py-1 font-mono font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              {currentPage} / {pagination.pages}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= pagination.pages || isLoading}
+              className="text-xs h-8 px-3"
+            >
+              Next →
+            </Button>
+          </div>
         </div>
       )}
 
