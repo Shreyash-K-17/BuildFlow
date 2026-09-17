@@ -192,8 +192,8 @@ export default function InventoryPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {successToast && (
-        <div className="fixed bottom-5 right-5 z-50 p-4 rounded-xl shadow-xl bg-slate-900 border border-emerald-500/40 text-slate-100 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 shrink-0">
+        <div className="fixed bottom-5 right-5 z-50 p-4 rounded-xl shadow-xl bg-white dark:bg-slate-900 border border-emerald-500/40 text-slate-900 dark:text-slate-100 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 shrink-0">
             <svg
               className="w-4 h-4"
               fill="none"

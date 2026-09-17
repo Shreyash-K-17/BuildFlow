@@ -127,9 +127,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
+    <div className="flex min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
       {/* Left Column: Brand & Construction Context (Desktop only) */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-slate-900 border-r border-slate-800/80 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-slate-900 text-slate-100 border-r border-slate-800/80 relative overflow-hidden">
         {/* Subtle grid pattern background */}
         <div className="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
 
@@ -198,7 +198,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column: Login Form */}
-      <div className="flex flex-1 flex-col justify-center items-center p-6 sm:p-12 lg:p-16 bg-slate-950">
+      <div className="flex flex-1 flex-col justify-center items-center p-6 sm:p-12 lg:p-16 bg-white dark:bg-slate-950">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-2">
@@ -215,16 +215,16 @@ export default function LoginPage() {
                 <path d="M12 4v6" />
               </svg>
             </div>
-            <span className="font-bold text-xl text-white">
+            <span className="font-bold text-xl text-slate-900 dark:text-white">
               Build<span className="text-amber-500">Flow</span>
             </span>
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Sign in to your account
             </h2>
-            <p className="mt-1.5 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
               Enter your verified email and password to access site operations.
             </p>
           </div>
@@ -233,10 +233,10 @@ export default function LoginPage() {
           {formError && (
             <div
               role="alert"
-              className="rounded-xl border border-red-500/40 bg-red-500/10 p-3.5 text-xs text-red-300 flex items-start gap-2.5 animate-in fade-in duration-150"
+              className="rounded-xl border border-red-500/40 bg-red-500/10 p-3.5 text-xs text-red-600 dark:text-red-300 flex items-start gap-2.5 animate-in fade-in duration-150"
             >
               <svg
-                className="w-4 h-4 text-red-400 shrink-0 mt-0.5"
+                className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -300,11 +300,11 @@ export default function LoginPage() {
           </form>
 
           {/* Register Link */}
-          <div className="pt-4 border-t border-slate-900 text-center text-xs text-slate-400">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
             <span>Need a new organization workspace? </span>
             <Link
               href="/register"
-              className="font-semibold text-amber-500 hover:text-amber-400 hover:underline transition-colors"
+              className="font-semibold text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 hover:underline transition-colors"
             >
               Register Organization
             </Link>

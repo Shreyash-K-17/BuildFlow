@@ -172,7 +172,7 @@ function TaskDependencyContent({
   const currentPhase = phaseMap.get(task.phase_id);
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="space-y-5">
       {/* Target Task Header */}
       <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
         <div className="flex flex-wrap items-center justify-between gap-2">

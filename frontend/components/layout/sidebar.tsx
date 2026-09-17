@@ -199,10 +199,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between bg-slate-950 text-slate-100 border-r border-slate-800/80">
+    <div className="flex h-full flex-col justify-between bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800/80 transition-colors">
       {/* Brand & Workspace */}
       <div>
-        <div className="flex items-center justify-between h-16 px-5 border-b border-slate-800/80">
+        <div className="flex items-center justify-between h-16 px-5 border-b border-slate-200 dark:border-slate-800/80">
           <Link
             href={isAdmin ? "/dashboard" : "/projects"}
             onClick={handleNavClick}
@@ -224,10 +224,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </svg>
             </div>
             <div>
-              <span className="font-bold text-base tracking-tight text-white">
+              <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">
                 Build<span className="text-amber-500">Flow</span>
               </span>
-              <span className="block text-[9px] uppercase tracking-widest text-slate-400 -mt-0.5">
+              <span className="block text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-400 -mt-0.5">
                 Site Operations
               </span>
             </div>
@@ -237,7 +237,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             <button
               type="button"
               onClick={onClose}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className="md:hidden p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               aria-label="Close navigation sidebar"
             >
               <svg
@@ -259,7 +259,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
         {/* Navigation Links */}
         <nav className="p-3 space-y-1" aria-label="Main Navigation">
-          <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {isAdmin ? "Operations Management" : "Field Operations"}
           </div>
 
@@ -277,7 +277,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group cursor-pointer select-none",
                   isActive
                     ? "bg-amber-500 text-slate-950 font-semibold shadow-sm"
-                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900"
                 )}
               >
                 <span
@@ -285,7 +285,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                     "transition-colors shrink-0",
                     isActive
                       ? "text-slate-950"
-                      : "text-slate-400 group-hover:text-amber-400"
+                      : "text-slate-500 dark:text-slate-400 group-hover:text-amber-500"
                   )}
                 >
                   {item.icon}
@@ -298,13 +298,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       </div>
 
       {/* Footer / Role badge */}
-      <div className="p-3 border-t border-slate-800/80">
-        <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800/80">
+        <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
           <div className="flex flex-col truncate pr-2">
-            <span className="text-xs font-semibold text-slate-200 truncate">
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
               {user?.username}
             </span>
-            <span className="text-[10px] text-slate-400 truncate">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
               {user?.email}
             </span>
           </div>
@@ -328,7 +328,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity"
             onClick={onClose}
             aria-hidden="true"
           />

@@ -23,7 +23,7 @@ export default function GatewayPage() {
   }, [isLoading, isAuthenticated, user, router]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-slate-100 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-4">
       <div className="flex flex-col items-center max-w-sm text-center">
         {/* Construction Icon */}
         <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-6">
@@ -44,14 +44,14 @@ export default function GatewayPage() {
           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-ping" />
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight text-white">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
           Build<span className="text-amber-500">Flow</span>
         </h1>
-        <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
           Construction Operations & Management
         </p>
 
-        <div className="mt-8 flex items-center gap-3 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-300">
+        <div className="mt-8 flex items-center gap-3 px-4 py-2 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
           <svg
             className="animate-spin h-4 w-4 text-amber-500"
             xmlns="http://www.w3.org/2000/svg"

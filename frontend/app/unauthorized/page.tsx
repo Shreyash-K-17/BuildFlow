@@ -16,8 +16,8 @@ export default function UnauthorizedPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 text-slate-100">
-      <Card className="w-full max-w-md border-red-500/30 bg-slate-900 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 text-slate-900 dark:text-slate-100">
+      <Card className="w-full max-w-md border-red-500/30 bg-white dark:bg-slate-900 shadow-2xl">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 mb-3">
             <svg
@@ -34,25 +34,25 @@ export default function UnauthorizedPage() {
               />
             </svg>
           </div>
-          <CardTitle className="text-xl font-bold text-white">
+          <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
             Access Restricted
           </CardTitle>
-          <p className="text-xs uppercase tracking-wider text-red-400 font-semibold mt-1">
+          <p className="text-xs uppercase tracking-wider text-red-500 dark:text-red-400 font-semibold mt-1">
             HTTP 403 Forbidden
           </p>
         </CardHeader>
-        <CardContent className="space-y-5 text-center text-sm text-slate-400">
+        <CardContent className="space-y-5 text-center text-sm text-slate-600 dark:text-slate-400">
           <p>
             You do not have administrative privileges to access this operational area. Your account is assigned to the{" "}
-            <span className="font-semibold text-slate-200 capitalize">
+            <span className="font-semibold text-slate-900 dark:text-slate-200 capitalize">
               {user?.role || "worker"}
             </span>{" "}
             role.
           </p>
 
-          <div className="rounded-lg bg-slate-950/80 border border-slate-800 p-3 text-xs text-left space-y-1">
-            <p className="text-slate-500">Authenticated Identity:</p>
-            <p className="font-medium text-slate-300 truncate">
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 p-3 text-xs text-left space-y-1">
+            <p className="text-slate-500 dark:text-slate-400">Authenticated Identity:</p>
+            <p className="font-medium text-slate-800 dark:text-slate-300 truncate">
               {user?.username} ({user?.email})
             </p>
           </div>

@@ -329,6 +329,8 @@ export interface ExpensesResponseData {
   expenses: Expense[];
 }
 
+export type ProjectExpensesResponse = ExpensesResponseData;
+
 export interface ExpenseResponseData {
   expense: Expense;
 }
@@ -336,6 +338,8 @@ export interface ExpenseResponseData {
 export interface AuditLogsResponseData {
   audit_logs: AuditLog[];
 }
+
+export type AuditLogsResponse = AuditLogsResponseData;
 
 // ============================================================
 // REQUEST PAYLOADS

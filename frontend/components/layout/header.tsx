@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "./user-menu";
+import { ThemeToggle } from "./theme-toggle";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -46,7 +47,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const isAdmin = user?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-4 sm:px-6">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-4 sm:px-6 transition-colors">
       {/* Left side: Mobile Toggle & Page Title */}
       <div className="flex items-center gap-3">
         <button
@@ -77,13 +78,15 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right side: Role badge & User Menu */}
-      <div className="flex items-center gap-3">
+      {/* Right side: Role badge, Theme Toggle & User Menu */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
         <div className="hidden sm:flex items-center gap-2">
           <Badge variant={isAdmin ? "amber" : "info"} dot>
             {isAdmin ? "Admin Console" : "Field Worker"}
           </Badge>
         </div>
+
+        <ThemeToggle />
 
         <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
 

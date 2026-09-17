@@ -24,7 +24,7 @@ export default function DashboardLayout({
   // Full-page session loading state while AuthProvider resolves token & /api/auth/me
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-slate-100 p-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-4 transition-colors">
         <div className="flex flex-col items-center max-w-sm text-center">
           <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-5">
             <svg
@@ -42,14 +42,14 @@ export default function DashboardLayout({
             </svg>
           </div>
 
-          <h2 className="text-xl font-bold tracking-tight text-white">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Build<span className="text-amber-500">Flow</span>
           </h2>
-          <p className="mt-1 text-xs font-medium uppercase tracking-widest text-slate-400">
+          <p className="mt-1 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
             Initializing Session...
           </p>
 
-          <div className="mt-6 flex items-center gap-3 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-300">
+          <div className="mt-6 flex items-center gap-3 px-4 py-2 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 shadow-sm">
             <svg
               className="animate-spin h-4 w-4 text-amber-500"
               xmlns="http://www.w3.org/2000/svg"
@@ -82,7 +82,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
       {/* Sidebar Navigation */}
       <Sidebar
         isOpen={mobileSidebarOpen}

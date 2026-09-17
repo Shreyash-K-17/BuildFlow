@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -26,32 +28,30 @@
   --card-border: #e2e8f0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #090d16;
-    --foreground: #f8fafc;
-    --surface: #111827;
-    --surface-muted: #1e293b;
-    --border: #1e293b;
-    --border-subtle: #334155;
-    --text-muted: #94a3b8;
+.dark {
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --surface: #111827;
+  --surface-muted: #1e293b;
+  --border: #1e293b;
+  --border-subtle: #334155;
+  --text-muted: #94a3b8;
 
-    --primary: #f59e0b;
-    --primary-hover: #fbbf24;
-    --primary-foreground: #090d16;
+  --primary: #f59e0b;
+  --primary-hover: #fbbf24;
+  --primary-foreground: #090d16;
 
-    --accent: #f59e0b;
-    --success: #10b981;
-    --success-foreground: #ecfdf5;
-    --danger: #ef4444;
-    --danger-foreground: #fef2f2;
-    --warning: #f59e0b;
-    --info: #38bdf8;
+  --accent: #f59e0b;
+  --success: #10b981;
+  --success-foreground: #ecfdf5;
+  --danger: #ef4444;
+  --danger-foreground: #fef2f2;
+  --warning: #f59e0b;
+  --info: #38bdf8;
 
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --card-border: #1e293b;
-  }
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --card-border: #1e293b;
 }
 
 @theme inline {
@@ -77,6 +77,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* Custom crisp scrollbars */
@@ -90,12 +91,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.7);
+  background: rgba(148, 163, 184, 0.65);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
 }
 
 /* ============================================================
@@ -110,6 +119,14 @@ body {
 }
 
 .buildflow-hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.dark .buildflow-hover-card:hover {
   transform: translateY(-3px);
   box-shadow:
     0 8px 18px -3px rgba(0, 0, 0, 0.45),
@@ -126,6 +143,14 @@ body {
 }
 
 .buildflow-hover-card-amber:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
+.dark .buildflow-hover-card-amber:hover {
   transform: translateY(-3px);
   box-shadow:
     0 8px 18px -3px rgba(0, 0, 0, 0.45),
@@ -142,6 +167,14 @@ body {
 }
 
 .buildflow-hover-card-blue:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(56, 189, 248, 0.2);
+}
+
+.dark .buildflow-hover-card-blue:hover {
   transform: translateY(-3px);
   box-shadow:
     0 8px 18px -3px rgba(0, 0, 0, 0.45),
@@ -158,6 +191,14 @@ body {
 }
 
 .buildflow-hover-card-green:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.dark .buildflow-hover-card-green:hover {
   transform: translateY(-3px);
   box-shadow:
     0 8px 18px -3px rgba(0, 0, 0, 0.45),
@@ -174,6 +215,14 @@ body {
 }
 
 .buildflow-hover-card-red:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(239, 68, 68, 0.2);
+}
+
+.dark .buildflow-hover-card-red:hover {
   transform: translateY(-3px);
   box-shadow:
     0 8px 18px -3px rgba(0, 0, 0, 0.45),
@@ -197,6 +246,10 @@ body {
 }
 
 .buildflow-hover-row:hover {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+.dark .buildflow-hover-row:hover {
   background-color: rgba(30, 41, 59, 0.55) !important;
 }
 
@@ -212,4 +265,3 @@ body {
     transform: none !important;
   }
 }
-

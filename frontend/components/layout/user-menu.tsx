@@ -90,7 +90,7 @@ export function UserMenu() {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 py-1.5 divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 py-1.5 divide-y divide-slate-200 dark:divide-slate-800 animate-in fade-in zoom-in-95 duration-150"
         >
           {/* User Details */}
           <div className="px-4 py-3">
@@ -116,7 +116,7 @@ export function UserMenu() {
               className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <svg
-                className="w-4 h-4 text-slate-400"
+                className="w-4 h-4 text-slate-500 dark:text-slate-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

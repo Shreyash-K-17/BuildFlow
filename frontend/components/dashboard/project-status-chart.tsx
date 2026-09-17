@@ -39,7 +39,7 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
           "#ef4444", // Cancelled - Ruby Red
         ],
         borderWidth: 2,
-        borderColor: "rgba(15, 23, 42, 0.4)",
+        borderColor: "transparent",
         hoverOffset: 4,
       },
     ],

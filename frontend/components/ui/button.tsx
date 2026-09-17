@@ -37,9 +37,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       amber:
         "bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400 shadow-sm border border-amber-400/40",
       secondary:
-        "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700 shadow-sm",
+        "bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-200 shadow-sm dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:border-slate-700",
       outline:
-        "bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-300 dark:border-slate-700",
+        "bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-300 dark:border-slate-700 shadow-sm",
       ghost:
         "bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50",
       danger:

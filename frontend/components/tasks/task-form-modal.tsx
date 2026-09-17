@@ -264,7 +264,7 @@ function TaskFormContent({
   const helperText = getProgressHelperText(formData.status);
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {generalError && (
         <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-start gap-2.5">
           <svg
