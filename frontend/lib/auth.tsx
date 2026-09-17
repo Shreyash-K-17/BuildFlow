@@ -14,7 +14,13 @@ import {
   RegisterPayload,
   User,
 } from "@/types";
-import { api, clearAuthToken, getAuthToken, setAuthToken } from "./api";
+import {
+  api,
+  clearAuthToken,
+  getAuthToken,
+  onUnauthorized,
+  setAuthToken,
+} from "./api";
 
 export interface AuthContextType {
   user: User | null;
@@ -95,8 +101,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
+    const unsubscribe = onUnauthorized(() => {
+      logout();
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [logout]);
 

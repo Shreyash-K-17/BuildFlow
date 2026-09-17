@@ -6,7 +6,7 @@ import {
 const TOKEN_STORAGE_KEY = "buildflow_token";
 
 /**
- * Custom Error class for typed BuildFlow API errors.
+ * Custom Error class for typed BuildFlow API and network errors.
  */
 export class ApiError extends Error {
   public readonly code: string;
@@ -27,6 +27,81 @@ export class ApiError extends Error {
 
     // Restore prototype chain
     Object.setPrototypeOf(this, ApiError.prototype);
+  }
+
+  public get isAbortError(): boolean {
+    return this.code === "ABORT_ERROR";
+  }
+
+  public get isNetworkError(): boolean {
+    return this.status === 0 || this.code === "NETWORK_ERROR";
+  }
+
+  public get isAuthError(): boolean {
+    return this.status === 401 || this.code === "UNAUTHORIZED";
+  }
+
+  public get isForbidden(): boolean {
+    return this.status === 403 || this.code === "FORBIDDEN";
+  }
+
+  public get isNotFound(): boolean {
+    return this.status === 404 || this.code === "NOT_FOUND";
+  }
+
+  public get isConflict(): boolean {
+    return this.status === 409 || this.code === "CONFLICT";
+  }
+
+  public get isValidationError(): boolean {
+    return this.status === 400 || this.code === "VALIDATION_ERROR";
+  }
+
+  public get isServerError(): boolean {
+    return this.status >= 500 || this.code === "INTERNAL_ERROR";
+  }
+
+  /**
+   * Helper to check if an unknown error was caused by an aborted request.
+   */
+  public static isAbortError(err: unknown): boolean {
+    if (err instanceof ApiError) {
+      return err.isAbortError;
+    }
+    if (err instanceof Error && err.name === "AbortError") {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Helper to check if an unknown error is a network connection failure.
+   */
+  public static isNetworkError(err: unknown): boolean {
+    if (err instanceof ApiError) {
+      return err.isNetworkError;
+    }
+    return false;
+  }
+
+  /**
+   * Convert any caught error into a safe, typed ApiError.
+   */
+  public static from(err: unknown, defaultMessage = "An unexpected error occurred."): ApiError {
+    if (err instanceof ApiError) {
+      return err;
+    }
+    if (err instanceof Error) {
+      if (err.name === "AbortError") {
+        return new ApiError("Request was cancelled", "ABORT_ERROR", 0);
+      }
+      return new ApiError(
+        err.message || defaultMessage,
+        "UNEXPECTED_ERROR",
+        500
+      );
+    }
+    return new ApiError(defaultMessage, "UNKNOWN_ERROR", 500);
   }
 }
 
@@ -63,6 +138,27 @@ export function clearAuthToken(): void {
   setAuthToken(null);
 }
 
+// 401 Unauthorized event listeners
+type UnauthorizedListener = () => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+export function onUnauthorized(listener: UnauthorizedListener): () => void {
+  unauthorizedListeners.add(listener);
+  return () => {
+    unauthorizedListeners.delete(listener);
+  };
+}
+
+export function notifyUnauthorized(): void {
+  unauthorizedListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // Ignore listener error
+    }
+  });
+}
+
 const getBaseUrl = (): string => {
   const url =
     process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000/api";
@@ -72,11 +168,50 @@ const getBaseUrl = (): string => {
 export interface RequestOptions extends Omit<RequestInit, "body"> {
   token?: string | null;
   body?: unknown;
+  timeout?: number;
+  signal?: AbortSignal;
+}
+
+/**
+ * Filter and sanitize error messages to prevent leaking stack traces,
+ * database internal errors, or sensitive backend info.
+ */
+function sanitizeErrorMessage(rawMessage: string, status: number): string {
+  if (!rawMessage || typeof rawMessage !== "string") {
+    if (status === 401) return "Your session has expired. Please sign in again.";
+    if (status === 403) return "You do not have permission to perform this action.";
+    if (status === 404) return "The requested resource was not found.";
+    if (status === 409) return "A conflict occurred with an existing resource.";
+    if (status >= 500) return "Something went wrong on the server. Please try again later.";
+    return "Request failed.";
+  }
+
+  const lower = rawMessage.toLowerCase();
+  const containsSensitiveInfo =
+    lower.includes("psycopg2") ||
+    lower.includes("sqlalchemy") ||
+    lower.includes("traceback") ||
+    lower.includes("syntax error") ||
+    lower.includes("pg_") ||
+    lower.includes("column ") ||
+    lower.includes("relation ") ||
+    lower.includes("table ") ||
+    lower.includes("<html") ||
+    lower.includes("<!doctype");
+
+  if (containsSensitiveInfo) {
+    if (status >= 500) {
+      return "Something went wrong on the server. Please try again later.";
+    }
+    return "An unexpected error occurred. Please try again.";
+  }
+
+  return rawMessage;
 }
 
 /**
  * Centralized fetch handler that handles auth headers, JSON parsing,
- * and standard BuildFlow success/error envelopes.
+ * request timeouts, cancellation, and standard BuildFlow success/error envelopes.
  */
 async function apiRequest<T>(
   endpoint: string,
@@ -86,10 +221,16 @@ async function apiRequest<T>(
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${cleanEndpoint}`;
 
-  const { token, body, headers: customHeaders, ...restOptions } = options;
+  const {
+    token,
+    body,
+    timeout = 30000,
+    signal: callerSignal,
+    headers: customHeaders,
+    ...restOptions
+  } = options;
 
   const activeToken = token !== undefined ? token : getAuthToken();
-
   const headers = new Headers(customHeaders);
 
   if (!headers.has("Content-Type") && !(body instanceof FormData)) {
@@ -109,20 +250,51 @@ async function apiRequest<T>(
     }
   }
 
+  // Setup timeout and abort handling
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  if (timeout > 0) {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
+  }
+
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      controller.abort();
+    } else {
+      callerSignal.addEventListener("abort", () => controller.abort(), {
+        once: true,
+      });
+    }
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {
       ...restOptions,
       headers,
       body: requestBody,
+      signal: controller.signal,
     });
   } catch (err) {
-    const errorMsg =
-      err instanceof Error ? err.message : "Network connection error";
-    throw new ApiError(errorMsg, "NETWORK_ERROR", 0);
+    if (callerSignal?.aborted || (err instanceof Error && err.name === "AbortError")) {
+      throw new ApiError("Request was cancelled", "ABORT_ERROR", 0);
+    }
+
+    throw new ApiError(
+      "Unable to connect to BuildFlow. Please check your connection and try again.",
+      "NETWORK_ERROR",
+      0
+    );
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 
-  let json: unknown;
+  let json: unknown = null;
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
     try {
@@ -133,28 +305,43 @@ async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    let errorCode = "REQUEST_FAILED";
+    let errorMessage = response.statusText || `HTTP ${response.status} error`;
+    let errorDetails: Record<string, unknown> | string[] | undefined = undefined;
+
     if (json && typeof json === "object" && "error" in json) {
       const errorResp = json as ApiErrorResponse;
       const rawMessage = errorResp.error.message;
-      const message =
-        typeof rawMessage === "string"
-          ? rawMessage
-          : typeof rawMessage === "object" && rawMessage !== null
-          ? JSON.stringify(rawMessage)
-          : response.statusText || "Request failed";
+      errorCode = errorResp.error.code || errorCode;
+      errorDetails = errorResp.error.details;
 
-      throw new ApiError(
-        message,
-        errorResp.error.code || "REQUEST_FAILED",
-        response.status,
-        errorResp.error.details
-      );
+      if (typeof rawMessage === "string") {
+        errorMessage = rawMessage;
+      } else if (typeof rawMessage === "object" && rawMessage !== null) {
+        errorMessage = JSON.stringify(rawMessage);
+      }
+    }
+
+    // Sanitize user-facing message
+    const sanitizedMessage = sanitizeErrorMessage(errorMessage, response.status);
+
+    // Handle 401 Unauthorized token expiry
+    if (response.status === 401) {
+      const isAuthEndpoint =
+        cleanEndpoint.startsWith("/auth/login") ||
+        cleanEndpoint.startsWith("/auth/register");
+
+      if (!isAuthEndpoint && activeToken) {
+        clearAuthToken();
+        notifyUnauthorized();
+      }
     }
 
     throw new ApiError(
-      response.statusText || `HTTP ${response.status} error`,
-      "HTTP_ERROR",
-      response.status
+      sanitizedMessage,
+      errorCode,
+      response.status,
+      errorDetails
     );
   }
 

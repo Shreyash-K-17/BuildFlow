@@ -651,6 +651,28 @@ export default function ExpensesPage() {
                 />
               ))}
             </div>
+          ) : error ? (
+            <div className="p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto text-xl">
+                ⚠️
+              </div>
+              <h4 className="text-sm font-bold text-red-600 dark:text-red-400">
+                Unable to load project expenses
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                {error}
+              </p>
+              {selectedProjectId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchExpenses(selectedProjectId, currentPage)}
+                  className="mt-2 text-xs"
+                >
+                  Try Again
+                </Button>
+              )}
+            </div>
           ) : filteredExpenses.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto text-xl font-bold">

@@ -338,6 +338,26 @@ export default function AuditLogsPage() {
                 />
               ))}
             </div>
+          ) : error ? (
+            <div className="p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto text-xl">
+                ⚠️
+              </div>
+              <h4 className="text-sm font-bold text-red-600 dark:text-red-400">
+                Unable to load audit logs
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                {error}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAuditLogs(currentPage)}
+                className="mt-2 text-xs"
+              >
+                Try Again
+              </Button>
+            </div>
           ) : filteredLogs.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center mx-auto text-xl font-bold">
