@@ -49,6 +49,39 @@ def get_project_attendance(project_id, worker_id=None):
     ).all()
 
 
+def get_paginated_project_attendance(
+    project_id,
+    worker_id=None,
+    page=1,
+    per_page=25,
+):
+    query = Attendance.query.filter_by(
+        project_id=project_id
+    )
+
+    if worker_id is not None:
+        query = query.filter(
+            Attendance.worker_id == worker_id
+        )
+
+    total = query.count()
+
+    offset = (page - 1) * per_page
+    records = (
+        query.order_by(
+            Attendance.attendance_date.desc(),
+            Attendance.id.desc(),
+        )
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    return records, total, pages
+
+
 def update_attendance(
     attendance,
     status=None,

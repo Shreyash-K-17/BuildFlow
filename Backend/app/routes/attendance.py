@@ -10,6 +10,7 @@ from ..schemas.attendance import (
 )
 from ..services.attendance_service import (
     create_attendance,
+    get_paginated_project_attendance,
     get_project_attendance,
     update_attendance,
 )
@@ -218,6 +219,48 @@ def get_attendance(project_id, current_user):
         current_user,
     )
 
+    raw_page = request.args.get("page", 1)
+    raw_per_page = request.args.get("per_page", 25)
+
+    try:
+        page = int(raw_page)
+        per_page = int(raw_per_page)
+    except (ValueError, TypeError):
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid pagination parameters: page and per_page must be integers.",
+            },
+        }), 400
+
+    if page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page < 1:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page must be greater than or equal to 1.",
+            },
+        }), 400
+
+    if per_page > 100:
+        return jsonify({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "per_page cannot exceed 100.",
+            },
+        }), 400
+
     worker_id = None
     if current_user.role == "worker":
         worker = Worker.query.filter_by(
@@ -229,24 +272,40 @@ def get_attendance(project_id, current_user):
             return jsonify({
                 "success": True,
                 "data": {
-                    "attendance": []
+                    "project_id": project.id,
+                    "attendance": [],
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": 0,
+                        "pages": 0,
+                    },
                 },
             }), 200
 
         worker_id = worker.id
 
-    records = get_project_attendance(
+    records, total, pages = get_paginated_project_attendance(
         project_id=project.id,
         worker_id=worker_id,
+        page=page,
+        per_page=per_page,
     )
 
     return jsonify({
         "success": True,
         "data": {
+            "project_id": project.id,
             "attendance": [
                 serialize_attendance(record)
                 for record in records
-            ]
+            ],
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": pages,
+            },
         },
     }), 200
 

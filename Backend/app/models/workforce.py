@@ -185,6 +185,13 @@ class Attendance(db.Model):
             name="uq_worker_project_attendance_date",
         ),
 
+        db.Index(
+            "ix_attendance_project_date_id",
+            "project_id",
+            attendance_date.desc(),
+            id.desc(),
+        ),
+
         db.CheckConstraint(
             "status IN ('present', 'absent', 'half_day', 'leave')",
             name="ck_attendance_status",

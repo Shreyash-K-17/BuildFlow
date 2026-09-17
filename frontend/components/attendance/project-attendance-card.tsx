@@ -6,6 +6,7 @@ import {
   Worker,
   AttendanceListResponseData,
   WorkersResponseData,
+  PaginationMetadata,
 } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
@@ -31,6 +32,8 @@ export function ProjectAttendanceCard({
   const [workers, setWorkers] = useState<Worker[]>(passedWorkers || []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,19 +43,22 @@ export function ProjectAttendanceCard({
   // Filter state
   const [dateFilter, setDateFilter] = useState<string>("");
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pageToFetch: number = currentPage) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const [attRes, workersRes] = await Promise.all([
-        api.get<AttendanceListResponseData>(`/projects/${projectId}/attendance`),
+        api.get<AttendanceListResponseData>(
+          `/projects/${projectId}/attendance?page=${pageToFetch}&per_page=25`
+        ),
         passedWorkers && passedWorkers.length > 0
           ? Promise.resolve({ workers: passedWorkers })
           : api.get<WorkersResponseData>("/workers").catch(() => ({ workers: [] })),
       ]);
 
       setAttendanceRecords(attRes.attendance || []);
+      setPagination(attRes.pagination || null);
       setWorkers(workersRes.workers || []);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -63,13 +69,15 @@ export function ProjectAttendanceCard({
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, passedWorkers]);
+  }, [projectId, passedWorkers, currentPage]);
 
   useEffect(() => {
     let isSubscribed = true;
 
     Promise.all([
-      api.get<AttendanceListResponseData>(`/projects/${projectId}/attendance`),
+      api.get<AttendanceListResponseData>(
+        `/projects/${projectId}/attendance?page=${currentPage}&per_page=25`
+      ),
       passedWorkers && passedWorkers.length > 0
         ? Promise.resolve({ workers: passedWorkers })
         : api.get<WorkersResponseData>("/workers").catch(() => ({ workers: [] })),
@@ -77,6 +85,7 @@ export function ProjectAttendanceCard({
       .then(([attRes, workersRes]) => {
         if (!isSubscribed) return;
         setAttendanceRecords(attRes.attendance || []);
+        setPagination(attRes.pagination || null);
         setWorkers(workersRes.workers || []);
         setIsLoading(false);
       })
@@ -93,7 +102,13 @@ export function ProjectAttendanceCard({
     return () => {
       isSubscribed = false;
     };
-  }, [projectId, passedWorkers]);
+  }, [projectId, passedWorkers, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    if (pagination && newPage > pagination.pages && pagination.pages > 0) return;
+    setCurrentPage(newPage);
+  };
 
   // Worker lookup map
   const workersMap = useMemo(() => {
@@ -135,7 +150,7 @@ export function ProjectAttendanceCard({
   }, [filteredRecords]);
 
   // Derived metrics
-  const totalLogs = attendanceRecords.length;
+  const totalLogs = pagination?.total ?? attendanceRecords.length;
   const presentCount = attendanceRecords.filter(
     (r) => r.status === "present" || r.status === "half_day"
   ).length;
@@ -150,15 +165,8 @@ export function ProjectAttendanceCard({
     setIsModalOpen(true);
   };
 
-  const handleAttendanceSaved = (saved: Attendance) => {
-    setAttendanceRecords((prev) => {
-      const exists = prev.some((r) => r.id === saved.id);
-      if (exists) {
-        return prev.map((r) => (r.id === saved.id ? saved : r));
-      } else {
-        return [saved, ...prev];
-      }
-    });
+  const handleAttendanceSaved = () => {
+    fetchData(currentPage);
 
     const actionText = editingRecord ? "updated" : "recorded";
     setSuccessToast(`Attendance record ${actionText} successfully.`);
@@ -287,7 +295,7 @@ export function ProjectAttendanceCard({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={fetchData}
+                onClick={() => fetchData(currentPage)}
                 className="text-xs"
               >
                 Try Again
@@ -420,6 +428,45 @@ export function ProjectAttendanceCard({
             </div>
           )}
         </CardContent>
+
+        {/* Pagination Controls */}
+        {pagination && pagination.pages > 0 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Showing page <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.page}</span> of{" "}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.pages}</span> (
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{pagination.total}</span> total logs)
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1 || isLoading}
+                className="text-xs h-8 px-3"
+              >
+                ← Previous
+              </Button>
+
+              <div className="text-xs px-2.5 py-1 font-mono font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                {currentPage} / {pagination.pages}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= pagination.pages || isLoading}
+                className="text-xs h-8 px-3"
+              >
+                Next →
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Attendance Form Modal (Admin Only) */}

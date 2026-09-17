@@ -300,7 +300,9 @@ export interface DependencyResponseData {
 }
 
 export interface AttendanceListResponseData {
+  project_id?: number;
   attendance: Attendance[];
+  pagination?: PaginationMetadata;
 }
 
 export interface AttendanceResponseData {
