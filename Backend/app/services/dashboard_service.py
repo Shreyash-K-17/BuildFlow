@@ -1,4 +1,4 @@
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from ..extensions import db
 from ..models import (
@@ -14,119 +14,52 @@ from ..models import (
 
 def get_dashboard_data(organization_id):
     # =========================================================
-    # PROJECTS
+    # 1. PROJECTS
     # =========================================================
 
-    project_query = Project.query.filter_by(
-        organization_id=organization_id
-    )
-
-    project_count = project_query.count()
-
-    planning_projects = (
-        project_query
-        .filter(Project.status == "planning")
-        .count()
-    )
-
-    active_projects = (
-        project_query
-        .filter(Project.status == "active")
-        .count()
-    )
-
-    on_hold_projects = (
-        project_query
-        .filter(Project.status == "on_hold")
-        .count()
-    )
-
-    completed_projects = (
-        project_query
-        .filter(Project.status == "completed")
-        .count()
-    )
-
-    cancelled_projects = (
-        project_query
-        .filter(Project.status == "cancelled")
-        .count()
-    )
-
-    total_budget = (
+    (
+        project_count,
+        planning_projects,
+        active_projects,
+        on_hold_projects,
+        completed_projects,
+        cancelled_projects,
+        total_budget,
+    ) = (
         db.session.query(
-            func.coalesce(
-                func.sum(Project.budget),
-                0,
-            )
+            func.count(Project.id),
+            func.count(case((Project.status == "planning", 1))),
+            func.count(case((Project.status == "active", 1))),
+            func.count(case((Project.status == "on_hold", 1))),
+            func.count(case((Project.status == "completed", 1))),
+            func.count(case((Project.status == "cancelled", 1))),
+            func.coalesce(func.sum(Project.budget), 0),
         )
-        .filter(
-            Project.organization_id == organization_id
-        )
-        .scalar()
+        .filter(Project.organization_id == organization_id)
+        .one()
     )
 
     # =========================================================
-    # TASKS
+    # 2. TASKS & PROGRESS
     # =========================================================
 
-    task_query = (
-        db.session.query(Task)
-        .join(
-            ProjectPhase,
-            Task.phase_id == ProjectPhase.id,
-        )
-        .join(
-            Project,
-            ProjectPhase.project_id == Project.id,
-        )
-        .filter(
-            Project.organization_id == organization_id
-        )
-    )
-
-    total_tasks = task_query.count()
-
-    not_started_tasks = (
-        task_query
-        .filter(Task.status == "not_started")
-        .count()
-    )
-
-    in_progress_tasks = (
-        task_query
-        .filter(Task.status == "in_progress")
-        .count()
-    )
-
-    blocked_tasks = (
-        task_query
-        .filter(Task.status == "blocked")
-        .count()
-    )
-
-    on_hold_tasks = (
-        task_query
-        .filter(Task.status == "on_hold")
-        .count()
-    )
-
-    completed_tasks = (
-        task_query
-        .filter(Task.status == "completed")
-        .count()
-    )
-
-    # =========================================================
-    # OVERALL TASK PROGRESS
-    # =========================================================
-
-    average_progress = (
+    (
+        total_tasks,
+        not_started_tasks,
+        in_progress_tasks,
+        blocked_tasks,
+        on_hold_tasks,
+        completed_tasks,
+        average_progress,
+    ) = (
         db.session.query(
-            func.coalesce(
-                func.avg(Task.progress),
-                0,
-            )
+            func.count(Task.id),
+            func.count(case((Task.status == "not_started", 1))),
+            func.count(case((Task.status == "in_progress", 1))),
+            func.count(case((Task.status == "blocked", 1))),
+            func.count(case((Task.status == "on_hold", 1))),
+            func.count(case((Task.status == "completed", 1))),
+            func.coalesce(func.avg(Task.progress), 0),
         )
         .join(
             ProjectPhase,
@@ -139,28 +72,39 @@ def get_dashboard_data(organization_id):
         .filter(
             Project.organization_id == organization_id
         )
-        .scalar()
+        .one()
     )
 
     # =========================================================
-    # WORKFORCE
+    # 3. WORKFORCE
     # =========================================================
 
     active_workers = (
-        Worker.query
-        .filter_by(
-            organization_id=organization_id,
-            is_active=True,
+        db.session.query(func.count(Worker.id))
+        .filter(
+            Worker.organization_id == organization_id,
+            Worker.is_active == True,
         )
-        .count()
+        .scalar()
+        or 0
     )
 
     # =========================================================
-    # ATTENDANCE
+    # 4. ATTENDANCE
     # =========================================================
 
-    attendance_query = (
-        db.session.query(Attendance)
+    (
+        present_count,
+        absent_count,
+        half_day_count,
+        leave_count,
+    ) = (
+        db.session.query(
+            func.count(case((Attendance.status == "present", 1))),
+            func.count(case((Attendance.status == "absent", 1))),
+            func.count(case((Attendance.status == "half_day", 1))),
+            func.count(case((Attendance.status == "leave", 1))),
+        )
         .join(
             Worker,
             Attendance.worker_id == Worker.id,
@@ -168,41 +112,24 @@ def get_dashboard_data(organization_id):
         .filter(
             Worker.organization_id == organization_id
         )
-    )
-
-    present_count = (
-        attendance_query
-        .filter(Attendance.status == "present")
-        .count()
-    )
-
-    absent_count = (
-        attendance_query
-        .filter(Attendance.status == "absent")
-        .count()
-    )
-
-    half_day_count = (
-        attendance_query
-        .filter(Attendance.status == "half_day")
-        .count()
-    )
-
-    leave_count = (
-        attendance_query
-        .filter(Attendance.status == "leave")
-        .count()
+        .one()
     )
 
     # =========================================================
-    # MATERIALS
+    # 5. MATERIALS
     # =========================================================
 
     materials = (
-        Material.query
-        .filter_by(
-            organization_id=organization_id,
-            is_active=True,
+        db.session.query(
+            Material.id,
+            Material.name,
+            Material.current_stock,
+            Material.minimum_stock,
+            Material.unit,
+        )
+        .filter(
+            Material.organization_id == organization_id,
+            Material.is_active == True,
         )
         .order_by(
             Material.name.asc()
@@ -227,7 +154,7 @@ def get_dashboard_data(organization_id):
     ]
 
     # =========================================================
-    # FINANCE
+    # 6. FINANCE
     # =========================================================
 
     total_expenses = (
