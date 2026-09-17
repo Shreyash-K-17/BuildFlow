@@ -59,13 +59,11 @@ class User(db.Model):
             "username",
             name="uq_user_organization_username",
         ),
-
-        db.UniqueConstraint(
-            "organization_id",
-            "email",
-            name="uq_user_organization_email",
+        db.Index(
+            "ix_users_lower_email",
+            db.func.lower(email),
+            unique=True,
         ),
-
         db.CheckConstraint(
             "role IN ('admin', 'worker')",
             name="ck_user_role",

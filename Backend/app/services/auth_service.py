@@ -22,6 +22,13 @@ def register_admin(
     if existing_organization:
         raise ValueError("An organization with this name already exists.")
 
+    existing_email = User.query.filter(
+        func.lower(User.email) == email
+    ).first()
+
+    if existing_email:
+        raise ValueError("An account with this email already exists.")
+
     organization = Organization(
         name=organization_name
     )

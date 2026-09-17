@@ -38,11 +38,10 @@ def create_worker(
         )
 
     # --------------------------------------------------------
-    # Check email within organization
+    # Check email globally across all organizations
     # --------------------------------------------------------
 
     existing_email = User.query.filter(
-        User.organization_id == organization_id,
         func.lower(User.email) == email,
     ).first()
 
@@ -167,7 +166,6 @@ def update_worker(
             )
 
         existing_email = User.query.filter(
-            User.organization_id == worker.organization_id,
             func.lower(User.email) == email,
             User.id != user.id,
         ).first()

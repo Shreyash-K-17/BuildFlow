@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, current_app, jsonify
 
 from ..extensions import db
 
@@ -11,14 +11,14 @@ def health():
         with db.engine.connect() as connection:
             connection.exec_driver_sql("SELECT 1")
 
-        return {
+        return jsonify({
             "status": "ok",
             "database": "connected"
-        }, 200
+        }), 200
 
     except Exception as error:
-        return {
+        current_app.logger.error("Database health check failed: %s", error)
+        return jsonify({
             "status": "error",
-            "database": "disconnected",
-            "message": str(error)
-        }, 500
+            "database": "disconnected"
+        }), 500

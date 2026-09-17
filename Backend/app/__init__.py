@@ -28,9 +28,25 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
+    cors_origins = app.config.get("CORS_ORIGINS", "http://localhost:3000")
+    if isinstance(cors_origins, str):
+        if cors_origins == "*":
+            origins_list = "*"
+        else:
+            origins_list = [
+                origin.strip()
+                for origin in cors_origins.split(",")
+                if origin.strip()
+            ]
+    else:
+        origins_list = cors_origins
+
     CORS(
         app,
-        origins=app.config["CORS_ORIGINS"]
+        origins=origins_list,
+        supports_credentials=False,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     )
 
     from . import models  # noqa: F401
